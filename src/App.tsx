@@ -9,6 +9,7 @@ import { CertificateVerification } from "./pages/CertificateVerification";
 import { LGAdminDashboard } from "./pages/LGAdminDashboard";
 import { SuperAdminDashboard } from "./pages/SuperAdminDashboard";
 import { DigitizationFlow } from "./pages/DigitizationFlow";
+import { AdminOnboarding } from "./pages/AdminOnboarding";
 import { Toaster } from "./components/ui/sonner";
 
 export default function App() {
@@ -41,6 +42,8 @@ export default function App() {
         return <LGAdminDashboard onNavigate={handleNavigate} />;
       case 'super-admin-dashboard':
         return <SuperAdminDashboard onNavigate={handleNavigate} />;
+      case 'admin-onboarding':
+        return <AdminOnboarding onNavigate={handleNavigate} />;
       default:
         return <Landing onNavigate={handleNavigate} />;
     }

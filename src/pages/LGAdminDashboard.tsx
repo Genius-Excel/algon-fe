@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Shield, FileText, CheckCircle, XCircle, DollarSign, LogOut, Search, Filter, Download, Eye, Menu } from "lucide-react";
+import { Shield, FileText, CheckCircle, XCircle, DollarSign, LogOut, Search, Filter, Download, Eye, Menu, Plus, Edit, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { Checkbox } from "../components/ui/checkbox";
+import { Label } from "../components/ui/label";
 import { StatsCard } from "../components/StatsCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
@@ -571,35 +574,7 @@ export function LGAdminDashboard({ onNavigate }: LGAdminDashboardProps) {
           )}
 
           {activeTab === 'settings' && (
-            <div className="space-y-6">
-              <h2>Settings</h2>
-              <Card className="rounded-xl">
-                <CardHeader>
-                  <CardTitle>Application Requirements</CardTitle>
-                  <CardDescription>Configure local requirements for certificate applications</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm">Required Documents</label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" defaultChecked className="rounded" />
-                        <span className="text-sm">Letter from Traditional Ruler</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" defaultChecked className="rounded" />
-                        <span className="text-sm">Proof of Residence</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded" />
-                        <span className="text-sm">Birth Certificate</span>
-                      </label>
-                    </div>
-                  </div>
-                  <Button>Save Settings</Button>
-                </CardContent>
-              </Card>
-            </div>
+            <SettingsTab />
           )}
         </div>
       </div>
@@ -743,5 +718,302 @@ function DigitizationDialog({ request }: { request: any }) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Settings Tab Component with Dynamic Field Management
+function SettingsTab() {
+  const [dynamicFields, setDynamicFields] = useState([
+    { id: "1", field_label: "Letter from Traditional Ruler", field_type: "file", is_required: true },
+    { id: "2", field_label: "Proof of Residence", field_type: "file", is_required: true },
+    { id: "3", field_label: "Community Leader Endorsement", field_type: "text", is_required: false }
+  ]);
+  
+  const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [newField, setNewField] = useState({
+    field_label: "",
+    field_type: "text",
+    is_required: false
+  });
+
+  // Mock API functions - replace with actual endpoints
+  const fetchDynamicFields = async () => {
+    setIsLoading(true);
+    try {
+      // const response = await fetch('/api/lg/requirements/');
+      // const data = await response.json();
+      // setDynamicFields(data);
+      // Mock delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveDynamicField = async (fieldData: any) => {
+    setIsLoading(true);
+    try {
+      // const response = await fetch('/api/lg/requirements/', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(fieldData)
+      // });
+      
+      // Mock success
+      const newId = (dynamicFields.length + 1).toString();
+      const newFieldWithId = { ...fieldData, id: newId };
+      setDynamicFields([...dynamicFields, newFieldWithId]);
+      
+      toast.success("Field added successfully");
+      setIsAddFieldModalOpen(false);
+      setNewField({ field_label: "", field_type: "text", is_required: false });
+    } catch (error) {
+      console.error('Error saving field:', error);
+      toast.error("Failed to add field");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteDynamicField = async (fieldId: string) => {
+    setIsLoading(true);
+    try {
+      // await fetch(`/api/lg/requirements/${fieldId}`, { method: 'DELETE' });
+      
+      setDynamicFields(dynamicFields.filter(field => field.id !== fieldId));
+      toast.success("Field deleted successfully");
+    } catch (error) {
+      console.error('Error deleting field:', error);
+      toast.error("Failed to delete field");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitNewField = () => {
+    if (!newField.field_label) {
+      toast.error("Field label is required");
+      return;
+    }
+    saveDynamicField(newField);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2>Settings</h2>
+        <p className="text-muted-foreground">Configure application requirements and system settings</p>
+      </div>
+
+      {/* Applicant Requirement Fields Section */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Applicant Requirement Fields</CardTitle>
+              <CardDescription>
+                Define custom fields that applicants must complete for certificate applications
+              </CardDescription>
+            </div>
+            <Button onClick={() => setIsAddFieldModalOpen(true)} className="bg-teal-600 hover:bg-teal-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Field
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Field Label</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Required</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dynamicFields.map((field) => (
+                    <TableRow key={field.id}>
+                      <TableCell className="font-medium">{field.field_label}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+                          {field.field_type}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {field.is_required ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Required
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            Optional
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setEditingField(field);
+                              setNewField(field);
+                              setIsAddFieldModalOpen(true);
+                            }}
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => deleteDynamicField(field.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              
+              {dynamicFields.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                  <p>No custom fields configured yet</p>
+                  <p className="text-sm">Add custom fields to collect additional information from applicants</p>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Field Modal */}
+      <Dialog open={isAddFieldModalOpen} onOpenChange={setIsAddFieldModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {editingField ? "Edit Field" : "Add New Field"}
+            </DialogTitle>
+            <DialogDescription>
+              Configure a custom field for applicants to complete
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fieldLabel">Field Label *</Label>
+              <Input
+                id="fieldLabel"
+                placeholder="e.g., Letter from Community Head"
+                value={newField.field_label}
+                onChange={(e) => setNewField({...newField, field_label: e.target.value})}
+                className="rounded-lg"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="fieldType">Field Type *</Label>
+              <Select 
+                value={newField.field_type} 
+                onValueChange={(value) => setNewField({...newField, field_type: value})}
+              >
+                <SelectTrigger className="rounded-lg">
+                  <SelectValue placeholder="Select field type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text">Text</SelectItem>
+                  <SelectItem value="number">Number</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="file">File Upload</SelectItem>
+                  <SelectItem value="dropdown">Dropdown</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="isRequired"
+                checked={newField.is_required}
+                onCheckedChange={(checked) => setNewField({...newField, is_required: checked as boolean})}
+              />
+              <Label htmlFor="isRequired" className="text-sm">
+                This field is required for all applications
+              </Label>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddFieldModalOpen(false);
+                setEditingField(null);
+                setNewField({ field_label: "", field_type: "text", is_required: false });
+              }}
+              className="flex-1"
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitNewField}
+              disabled={isLoading}
+              className="flex-1 bg-teal-600 hover:bg-teal-700"
+            >
+              {isLoading ? "Saving..." : (editingField ? "Update Field" : "Add Field")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Additional Settings Cards */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <CardTitle>Application Settings</CardTitle>
+          <CardDescription>General configuration for certificate applications</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Processing Time (Days)</Label>
+            <Input 
+              type="number" 
+              defaultValue="7" 
+              className="rounded-lg w-24"
+            />
+            <p className="text-xs text-muted-foreground">
+              Expected processing time for new applications
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Application Fee (₦)</Label>
+            <Input 
+              type="number" 
+              defaultValue="5000" 
+              className="rounded-lg w-32"
+            />
+            <p className="text-xs text-muted-foreground">
+              Standard fee for certificate issuance
+            </p>
+          </div>
+          
+          <Button className="bg-teal-600 hover:bg-teal-700">
+            Save Settings
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
