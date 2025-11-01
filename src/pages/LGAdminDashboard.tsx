@@ -736,7 +736,8 @@ function SettingsTab() {
   const [newField, setNewField] = useState({
     field_label: "",
     field_type: "text",
-    is_required: false
+    is_required: false,
+    dropdown_options: ["Option 1", "Option 2"] // For dropdown fields
   });
 
   // Mock API functions - replace with actual endpoints
@@ -822,11 +823,33 @@ function SettingsTab() {
       toast.error("A field with this label already exists");
       return;
     }
+
+    // Validate dropdown options
+    if (newField.field_type === 'dropdown') {
+      const validOptions = newField.dropdown_options.filter((option: string) => option.trim() !== '');
+      if (validOptions.length < 2) {
+        toast.error("Dropdown fields must have at least 2 options");
+        return;
+      }
+      
+      // Check for duplicate options
+      const uniqueOptions = new Set(validOptions.map((opt: string) => opt.trim().toLowerCase()));
+      if (uniqueOptions.size !== validOptions.length) {
+        toast.error("Dropdown options must be unique");
+        return;
+      }
+    }
     
-    saveDynamicField({
+    const fieldToSave = {
       ...newField,
-      field_label: newField.field_label.trim()
-    });
+      field_label: newField.field_label.trim(),
+      // Only include dropdown_options for dropdown fields
+      ...(newField.field_type === 'dropdown' && {
+        dropdown_options: newField.dropdown_options.filter((opt: string) => opt.trim() !== '')
+      })
+    };
+    
+    saveDynamicField(fieldToSave);
   };
 
   return (
@@ -838,7 +861,7 @@ function SettingsTab() {
 
       {/* Applicant Requirement Fields Section */}
       <Card className="rounded-xl border shadow-sm">
-        <CardHeader className="border-b border-gray-100">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
               <CardTitle className="text-lg font-semibold text-gray-900">
@@ -849,13 +872,36 @@ function SettingsTab() {
               </CardDescription>
             </div>
             <Button 
-              onClick={() => setIsAddFieldModalOpen(true)} 
-              className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm transition-all duration-200 hover:shadow-md"
-              size="sm"
+              onClick={() => {
+                console.log("Add New Field button clicked"); // Debug log
+                setIsAddFieldModalOpen(true);
+              }} 
+              className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg transition-all duration-200 hover:shadow-xl border-0 font-medium px-6 py-2 text-sm"
+              size="default"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New Field
             </Button>
+          </div>
+          
+          {/* Additional prominent button for extra visibility */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-center">
+              <Button 
+                onClick={() => {
+                  console.log("Create Custom Field button clicked"); // Debug log
+                  setIsAddFieldModalOpen(true);
+                }} 
+                className="bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl border-0 font-semibold px-8 py-3"
+                size="lg"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create Custom Field
+              </Button>
+            </div>
+            <p className="text-center text-xs text-gray-500 mt-2">
+              Click to add a new custom field for applicants to complete
+            </p>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -927,7 +973,10 @@ function SettingsTab() {
                             variant="ghost"
                             onClick={() => {
                               setEditingField(field);
-                              setNewField(field);
+                              setNewField({
+                                ...field,
+                                dropdown_options: field.dropdown_options || ["Option 1", "Option 2"]
+                              });
                               setIsAddFieldModalOpen(true);
                             }}
                             className="h-8 w-8 p-0 text-gray-500 hover:text-teal-600 hover:bg-teal-50"
@@ -959,9 +1008,12 @@ function SettingsTab() {
                 Create custom fields to collect specific information from applicants based on your local government requirements.
               </p>
               <Button 
-                onClick={() => setIsAddFieldModalOpen(true)}
-                className="bg-teal-600 hover:bg-teal-700 text-white"
-                size="sm"
+                onClick={() => {
+                  console.log("Add Your First Field button clicked"); // Debug log
+                  setIsAddFieldModalOpen(true);
+                }}
+                className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg hover:shadow-xl font-medium"
+                size="default"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Your First Field
@@ -1080,6 +1132,64 @@ function SettingsTab() {
               </p>
             </div>
             
+            {/* Dropdown Options Configuration */}
+            {newField.field_type === 'dropdown' && (
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium text-blue-900">Configure Dropdown Options</span>
+                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Required for dropdown fields</span>
+                </div>
+                <div className="space-y-2">
+                  {newField.dropdown_options.map((option: string, index: number) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e: any) => {
+                          const newOptions = [...newField.dropdown_options];
+                          newOptions[index] = e.target.value;
+                          setNewField({...newField, dropdown_options: newOptions});
+                        }}
+                        className="flex-1 rounded-lg border-blue-200 focus:border-blue-500"
+                      />
+                      {newField.dropdown_options.length > 2 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const newOptions = newField.dropdown_options.filter((_: any, i: number) => i !== index);
+                            setNewField({...newField, dropdown_options: newOptions});
+                          }}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setNewField({
+                        ...newField, 
+                        dropdown_options: [...newField.dropdown_options, `Option ${newField.dropdown_options.length + 1}`]
+                      });
+                    }}
+                    className="w-full rounded-lg border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Add Another Option
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-700">
+                  Minimum 2 options required. Users will select one of these options from a dropdown menu.
+                </p>
+              </div>
+            )}
+            
             {/* Required Field Toggle */}
             <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <Checkbox
@@ -1127,6 +1237,13 @@ function SettingsTab() {
                         <SelectTrigger>
                           <SelectValue placeholder="Select an option" />
                         </SelectTrigger>
+                        <SelectContent>
+                          {newField.dropdown_options.map((option: string, index: number) => (
+                            <SelectItem key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     )}
                   </div>
@@ -1144,7 +1261,7 @@ function SettingsTab() {
               onClick={() => {
                 setIsAddFieldModalOpen(false);
                 setEditingField(null);
-                setNewField({ field_label: "", field_type: "text", is_required: false });
+                setNewField({ field_label: "", field_type: "text", is_required: false, dropdown_options: ["Option 1", "Option 2"] });
               }}
               className="flex-1 rounded-lg"
               disabled={isLoading}
@@ -1153,7 +1270,11 @@ function SettingsTab() {
             </Button>
             <Button 
               onClick={handleSubmitNewField}
-              disabled={isLoading || !newField.field_label.trim()}
+              disabled={
+                isLoading || 
+                !newField.field_label.trim() || 
+                (newField.field_type === 'dropdown' && newField.dropdown_options.filter((opt: string) => opt.trim() !== '').length < 2)
+              }
               className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm disabled:opacity-50"
             >
               {isLoading ? (
