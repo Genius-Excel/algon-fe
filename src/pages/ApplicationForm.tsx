@@ -27,12 +27,15 @@ export function ApplicationForm({ onNavigate }: ApplicationFormProps) {
     village: "",
     phone: "",
     email: "",
+    profilePhoto: null as File | null,
     // Step 2
     landmark: "",
     address: "",
     // Step 3
     paymentMethod: ""
   });
+
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -46,9 +49,32 @@ export function ApplicationForm({ onNavigate }: ApplicationFormProps) {
     }
   };
 
-  const handleSubmit = () => {
-    // Mock submission - redirect to applicant dashboard
-    onNavigate('applicant-dashboard');
+  const handleSubmit = async () => {
+    try {
+      // Create FormData for file upload
+      const formDataForSubmission = new FormData();
+      
+      // Add form fields
+      Object.keys(formData).forEach(key => {
+        if (key === 'profilePhoto' && formData[key]) {
+          formDataForSubmission.append('profile_photo', formData[key]);
+        } else if (key !== 'profilePhoto') {
+          formDataForSubmission.append(key, formData[key]);
+        }
+      });
+
+      // Mock API call - replace with actual endpoint
+      // const response = await fetch('/api/applications/', {
+      //   method: 'POST',
+      //   body: formDataForSubmission,
+      // });
+
+      // Mock success - redirect to applicant dashboard
+      onNavigate('applicant-dashboard');
+    } catch (error) {
+      console.error('Submission error:', error);
+      // Handle error appropriately
+    }
   };
 
   return (
@@ -78,7 +104,7 @@ export function ApplicationForm({ onNavigate }: ApplicationFormProps) {
 
         <Card className="rounded-xl shadow-lg">
           {currentStep === 1 && (
-            <Step1 formData={formData} setFormData={setFormData} />
+            <Step1 formData={formData} setFormData={setFormData} photoPreview={photoPreview} setPhotoPreview={setPhotoPreview} />
           )}
           {currentStep === 2 && (
             <Step2 formData={formData} setFormData={setFormData} />
@@ -133,7 +159,38 @@ export function ApplicationForm({ onNavigate }: ApplicationFormProps) {
   );
 }
 
-function Step1({ formData, setFormData }: any) {
+function Step1({ formData, setFormData, photoPreview, setPhotoPreview }: any) {
+  const handlePhotoUpload = (e: any) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+        alert("Please select a valid image file (JPG, JPEG, or PNG)");
+        return;
+      }
+      
+      // Validate file size (2MB max)
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Image size must be less than 2MB");
+        return;
+      }
+
+      setFormData({...formData, profilePhoto: file});
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removePhoto = () => {
+    setFormData({...formData, profilePhoto: null});
+    setPhotoPreview(null);
+  };
+
   return (
     <>
       <CardHeader>
@@ -141,6 +198,50 @@ function Step1({ formData, setFormData }: any) {
         <CardDescription>Enter your personal information</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Profile Photo Upload */}
+        <div className="space-y-2">
+          <Label>Upload Profile Photo</Label>
+          <div className="flex items-start gap-4">
+            <div className="flex-1">
+              <input
+                type="file"
+                accept=".jpg,.jpeg,.png"
+                onChange={handlePhotoUpload}
+                className="hidden"
+                id="profile-photo"
+              />
+              <label
+                htmlFor="profile-photo"
+                className="border-2 border-dashed border-border rounded-lg p-4 text-center hover:border-primary transition-colors cursor-pointer block"
+              >
+                <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm">Click to upload photo</p>
+                <p className="text-xs text-muted-foreground mt-1">JPG, JPEG, PNG (MAX. 2MB)</p>
+              </label>
+              <p className="text-xs text-muted-foreground mt-2">
+                This photo will appear on your issued certificate.
+              </p>
+            </div>
+            
+            {/* Photo Preview */}
+            {photoPreview && (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Profile preview"
+                  className="w-24 h-24 rounded-full object-cover border-2 border-border"
+                />
+                <button
+                  onClick={removePhoto}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Full Name</Label>

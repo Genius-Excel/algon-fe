@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Shield, FileText, CheckCircle, XCircle, DollarSign, LogOut, Search, Filter, Download, Eye, Menu } from "lucide-react";
+import { Shield, FileText, CheckCircle, XCircle, DollarSign, LogOut, Search, Filter, Download, Eye, Menu, Plus, Edit, Trash2, Upload } from "lucide-react";
+import { toast } from "sonner";
+import { Checkbox } from "../components/ui/checkbox";
+import { Label } from "../components/ui/label";
 import { StatsCard } from "../components/StatsCard";
 import { StatusBadge } from "../components/StatusBadge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
@@ -571,35 +574,7 @@ export function LGAdminDashboard({ onNavigate }: LGAdminDashboardProps) {
           )}
 
           {activeTab === 'settings' && (
-            <div className="space-y-6">
-              <h2>Settings</h2>
-              <Card className="rounded-xl">
-                <CardHeader>
-                  <CardTitle>Application Requirements</CardTitle>
-                  <CardDescription>Configure local requirements for certificate applications</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm">Required Documents</label>
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" defaultChecked className="rounded" />
-                        <span className="text-sm">Letter from Traditional Ruler</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" defaultChecked className="rounded" />
-                        <span className="text-sm">Proof of Residence</span>
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input type="checkbox" className="rounded" />
-                        <span className="text-sm">Birth Certificate</span>
-                      </label>
-                    </div>
-                  </div>
-                  <Button>Save Settings</Button>
-                </CardContent>
-              </Card>
-            </div>
+            <SettingsTab />
           )}
         </div>
       </div>
@@ -743,5 +718,614 @@ function DigitizationDialog({ request }: { request: any }) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Settings Tab Component with Dynamic Field Management
+function SettingsTab() {
+  const [dynamicFields, setDynamicFields] = useState([
+    { id: "1", field_label: "Letter from Traditional Ruler", field_type: "file", is_required: true },
+    { id: "2", field_label: "Proof of Residence", field_type: "file", is_required: true },
+    { id: "3", field_label: "Community Leader Endorsement", field_type: "text", is_required: false }
+  ]);
+  
+  const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
+  const [editingField, setEditingField] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const [newField, setNewField] = useState({
+    field_label: "",
+    field_type: "text",
+    is_required: false,
+    dropdown_options: ["Option 1", "Option 2"] // For dropdown fields
+  });
+
+  // Mock API functions - replace with actual endpoints
+  const fetchDynamicFields = async () => {
+    setIsLoading(true);
+    try {
+      // const response = await fetch('/api/lg/requirements/');
+      // const data = await response.json();
+      // setDynamicFields(data);
+      // Mock delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (error) {
+      console.error('Error fetching fields:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveDynamicField = async (fieldData: any) => {
+    setIsLoading(true);
+    try {
+      // const response = await fetch('/api/lg/requirements/', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(fieldData)
+      // });
+      
+      // Mock success
+      const newId = (dynamicFields.length + 1).toString();
+      const newFieldWithId = { ...fieldData, id: newId };
+      setDynamicFields([...dynamicFields, newFieldWithId]);
+      
+      toast.success("Field added successfully");
+      setIsAddFieldModalOpen(false);
+      setNewField({ field_label: "", field_type: "text", is_required: false });
+    } catch (error) {
+      console.error('Error saving field:', error);
+      toast.error("Failed to add field");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteDynamicField = async (fieldId: string, fieldLabel: string) => {
+    // Show confirmation dialog
+    if (!window.confirm(`Are you sure you want to delete the field "${fieldLabel}"? This action cannot be undone and may affect existing applications.`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // await fetch(`/api/lg/requirements/${fieldId}`, { method: 'DELETE' });
+      
+      setDynamicFields(dynamicFields.filter((field: any) => field.id !== fieldId));
+      toast.success(`Field "${fieldLabel}" deleted successfully`);
+    } catch (error) {
+      console.error('Error deleting field:', error);
+      toast.error("Failed to delete field");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmitNewField = () => {
+    // Validation
+    if (!newField.field_label.trim()) {
+      toast.error("Field label is required");
+      return;
+    }
+    
+    if (newField.field_label.trim().length < 3) {
+      toast.error("Field label must be at least 3 characters long");
+      return;
+    }
+
+    // Check for duplicate field labels
+    const isDuplicate = dynamicFields.some((field: any) => 
+      field.field_label.toLowerCase() === newField.field_label.trim().toLowerCase() && 
+      field.id !== editingField?.id
+    );
+    
+    if (isDuplicate) {
+      toast.error("A field with this label already exists");
+      return;
+    }
+
+    // Validate dropdown options
+    if (newField.field_type === 'dropdown') {
+      const validOptions = newField.dropdown_options.filter((option: string) => option.trim() !== '');
+      if (validOptions.length < 2) {
+        toast.error("Dropdown fields must have at least 2 options");
+        return;
+      }
+      
+      // Check for duplicate options
+      const uniqueOptions = new Set(validOptions.map((opt: string) => opt.trim().toLowerCase()));
+      if (uniqueOptions.size !== validOptions.length) {
+        toast.error("Dropdown options must be unique");
+        return;
+      }
+    }
+    
+    const fieldToSave = {
+      ...newField,
+      field_label: newField.field_label.trim(),
+      // Only include dropdown_options for dropdown fields
+      ...(newField.field_type === 'dropdown' && {
+        dropdown_options: newField.dropdown_options.filter((opt: string) => opt.trim() !== '')
+      })
+    };
+    
+    saveDynamicField(fieldToSave);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2>Settings</h2>
+        <p className="text-muted-foreground">Configure application requirements and system settings</p>
+      </div>
+
+      {/* Applicant Requirement Fields Section */}
+      <Card className="rounded-xl border shadow-sm">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Custom Application Fields
+              </CardTitle>
+              <CardDescription className="text-sm text-gray-600">
+                Configure additional fields that applicants must complete during the application process
+              </CardDescription>
+            </div>
+            <Button 
+              onClick={() => {
+                console.log("Add New Field button clicked"); // Debug log
+                setIsAddFieldModalOpen(true);
+              }} 
+              className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg transition-all duration-200 hover:shadow-xl border-0 font-medium px-6 py-2 text-sm"
+              size="default"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add New Field
+            </Button>
+          </div>
+          
+          {/* Additional prominent button for extra visibility */}
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <div className="flex items-center justify-center">
+              <Button 
+                onClick={() => {
+                  console.log("Create Custom Field button clicked"); // Debug log
+                  setIsAddFieldModalOpen(true);
+                }} 
+                className="bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl border-0 font-semibold px-8 py-3"
+                size="lg"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Create Custom Field
+              </Button>
+            </div>
+            <p className="text-center text-xs text-gray-500 mt-2">
+              Click to add a new custom field for applicants to complete
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+                <p className="text-sm text-gray-500">Loading fields...</p>
+              </div>
+            </div>
+          ) : dynamicFields.length > 0 ? (
+            <div className="overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-gray-100">
+                    <TableHead className="font-medium text-gray-700 py-4">Field Label</TableHead>
+                    <TableHead className="font-medium text-gray-700">Input Type</TableHead>
+                    <TableHead className="font-medium text-gray-700">Required</TableHead>
+                    <TableHead className="font-medium text-gray-700 text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {dynamicFields.map((field, index) => (
+                    <TableRow 
+                      key={field.id} 
+                      className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
+                        index === dynamicFields.length - 1 ? 'border-b-0' : ''
+                      }`}
+                    >
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center">
+                            {field.field_type === 'file' && <Upload className="w-4 h-4 text-teal-600" />}
+                            {field.field_type === 'text' && <FileText className="w-4 h-4 text-teal-600" />}
+                            {field.field_type === 'number' && <span className="text-xs font-bold text-teal-600">#</span>}
+                            {field.field_type === 'date' && <span className="text-xs font-bold text-teal-600">📅</span>}
+                            {field.field_type === 'dropdown' && <span className="text-xs font-bold text-teal-600">▼</span>}
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{field.field_label}</p>
+                            <p className="text-xs text-gray-500 capitalize">
+                              {field.field_type === 'dropdown' ? 'Select options' : field.field_type + ' input'}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 capitalize">
+                          {field.field_type}
+                        </span>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        {field.is_required ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full mr-1.5"></span>
+                            Required
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-700 border border-gray-200">
+                            <span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1.5"></span>
+                            Optional
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="py-4 text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingField(field);
+                              setNewField({
+                                ...field,
+                                dropdown_options: field.dropdown_options || ["Option 1", "Option 2"]
+                              });
+                              setIsAddFieldModalOpen(true);
+                            }}
+                            className="h-8 w-8 p-0 text-gray-500 hover:text-teal-600 hover:bg-teal-50"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteDynamicField(field.id, field.field_label)}
+                            className="h-8 w-8 p-0 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-12 px-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <FileText className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No custom fields yet</h3>
+              <p className="text-sm text-gray-500 mb-6 max-w-sm mx-auto">
+                Create custom fields to collect specific information from applicants based on your local government requirements.
+              </p>
+              <Button 
+                onClick={() => {
+                  console.log("Add Your First Field button clicked"); // Debug log
+                  setIsAddFieldModalOpen(true);
+                }}
+                className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg hover:shadow-xl font-medium"
+                size="default"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Your First Field
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Add/Edit Field Modal */}
+      <Dialog open={isAddFieldModalOpen} onOpenChange={setIsAddFieldModalOpen}>
+        <DialogContent className="sm:max-w-lg max-w-[95vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                {editingField ? (
+                  <Edit className="w-5 h-5 text-teal-600" />
+                ) : (
+                  <Plus className="w-5 h-5 text-teal-600" />
+                )}
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-semibold text-gray-900">
+                  {editingField ? "Edit Custom Field" : "Add New Custom Field"}
+                </DialogTitle>
+                <DialogDescription className="text-sm text-gray-600 mt-1">
+                  {editingField 
+                    ? "Modify the field configuration below" 
+                    : "Create a custom field that applicants will need to complete"
+                  }
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Field Label */}
+            <div className="space-y-2">
+              <Label htmlFor="fieldLabel" className="text-sm font-medium text-gray-700">
+                Field Label *
+              </Label>
+              <Input
+                id="fieldLabel"
+                placeholder="e.g., Letter from Community Head"
+                value={newField.field_label}
+                onChange={(e) => setNewField({...newField, field_label: e.target.value})}
+                className="rounded-lg border-gray-200 focus:border-teal-500 focus:ring-teal-500"
+              />
+              <p className="text-xs text-gray-500">
+                This label will be displayed to applicants in the form
+              </p>
+            </div>
+            
+            {/* Field Type */}
+            <div className="space-y-2">
+              <Label htmlFor="fieldType" className="text-sm font-medium text-gray-700">
+                Input Type *
+              </Label>
+              <Select 
+                value={newField.field_type} 
+                onValueChange={(value) => setNewField({...newField, field_type: value})}
+              >
+                <SelectTrigger className="rounded-lg border-gray-200 focus:border-teal-500 focus:ring-teal-500">
+                  <SelectValue placeholder="Choose the type of input field" />
+                </SelectTrigger>
+                <SelectContent className="rounded-lg">
+                  <SelectItem value="text" className="flex items-center">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <div className="font-medium">Text Input</div>
+                        <div className="text-xs text-gray-500">Short text responses</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="number">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 text-center text-xs font-bold text-gray-500">#</span>
+                      <div>
+                        <div className="font-medium">Number Input</div>
+                        <div className="text-xs text-gray-500">Numeric values only</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="date">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 text-center text-xs text-gray-500">📅</span>
+                      <div>
+                        <div className="font-medium">Date Picker</div>
+                        <div className="text-xs text-gray-500">Calendar date selection</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="file">
+                    <div className="flex items-center gap-2">
+                      <Upload className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <div className="font-medium">File Upload</div>
+                        <div className="text-xs text-gray-500">Document or image upload</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="dropdown">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4 text-center text-xs font-bold text-gray-500">▼</span>
+                      <div>
+                        <div className="font-medium">Dropdown Menu</div>
+                        <div className="text-xs text-gray-500">Predefined options</div>
+                      </div>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-500">
+                Choose the most appropriate input type for the information you need
+              </p>
+            </div>
+            
+            {/* Dropdown Options Configuration */}
+            {newField.field_type === 'dropdown' && (
+              <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-sm font-medium text-blue-900">Configure Dropdown Options</span>
+                  <span className="text-xs text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">Required for dropdown fields</span>
+                </div>
+                <div className="space-y-2">
+                  {newField.dropdown_options.map((option: string, index: number) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        placeholder={`Option ${index + 1}`}
+                        value={option}
+                        onChange={(e: any) => {
+                          const newOptions = [...newField.dropdown_options];
+                          newOptions[index] = e.target.value;
+                          setNewField({...newField, dropdown_options: newOptions});
+                        }}
+                        className="flex-1 rounded-lg border-blue-200 focus:border-blue-500"
+                      />
+                      {newField.dropdown_options.length > 2 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const newOptions = newField.dropdown_options.filter((_: any, i: number) => i !== index);
+                            setNewField({...newField, dropdown_options: newOptions});
+                          }}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setNewField({
+                        ...newField, 
+                        dropdown_options: [...newField.dropdown_options, `Option ${newField.dropdown_options.length + 1}`]
+                      });
+                    }}
+                    className="w-full rounded-lg border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" />
+                    Add Another Option
+                  </Button>
+                </div>
+                <p className="text-xs text-blue-700">
+                  Minimum 2 options required. Users will select one of these options from a dropdown menu.
+                </p>
+              </div>
+            )}
+            
+            {/* Required Field Toggle */}
+            <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <Checkbox
+                id="isRequired"
+                checked={newField.is_required}
+                onCheckedChange={(checked) => setNewField({...newField, is_required: checked as boolean})}
+                className="mt-0.5"
+              />
+              <div className="flex-1">
+                <Label htmlFor="isRequired" className="text-sm font-medium text-gray-700 cursor-pointer">
+                  Make this field required
+                </Label>
+                <p className="text-xs text-gray-500 mt-1">
+                  Required fields must be completed before applicants can submit their application
+                </p>
+              </div>
+            </div>
+
+            {/* Preview Section */}
+            {newField.field_label && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium text-gray-700">Preview</Label>
+                <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="space-y-2">
+                    <Label className="text-sm">
+                      {newField.field_label} 
+                      {newField.is_required && <span className="text-red-500 ml-1">*</span>}
+                    </Label>
+                    {newField.field_type === 'text' && (
+                      <Input placeholder={`Enter ${newField.field_label.toLowerCase()}`} disabled />
+                    )}
+                    {newField.field_type === 'number' && (
+                      <Input type="number" placeholder="0" disabled />
+                    )}
+                    {newField.field_type === 'date' && (
+                      <Input type="date" disabled />
+                    )}
+                    {newField.field_type === 'file' && (
+                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center text-gray-500 text-sm">
+                        Click to upload file
+                      </div>
+                    )}
+                    {newField.field_type === 'dropdown' && (
+                      <Select disabled>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select an option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {newField.dropdown_options.map((option: string, index: number) => (
+                            <SelectItem key={index} value={option.toLowerCase().replace(/\s+/g, '-')}>
+                              {option}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500">
+                  This is how the field will appear to applicants
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddFieldModalOpen(false);
+                setEditingField(null);
+                setNewField({ field_label: "", field_type: "text", is_required: false, dropdown_options: ["Option 1", "Option 2"] });
+              }}
+              className="flex-1 rounded-lg"
+              disabled={isLoading}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitNewField}
+              disabled={
+                isLoading || 
+                !newField.field_label.trim() || 
+                (newField.field_type === 'dropdown' && newField.dropdown_options.filter((opt: string) => opt.trim() !== '').length < 2)
+              }
+              className="flex-1 bg-teal-600 hover:bg-teal-700 text-white rounded-lg shadow-sm disabled:opacity-50"
+            >
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Saving...
+                </div>
+              ) : (
+                editingField ? "Update Field" : "Add Field"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Additional Settings Cards */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <CardTitle>Application Settings</CardTitle>
+          <CardDescription>General configuration for certificate applications</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>Processing Time (Days)</Label>
+            <Input 
+              type="number" 
+              defaultValue="7" 
+              className="rounded-lg w-24"
+            />
+            <p className="text-xs text-muted-foreground">
+              Expected processing time for new applications
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <Label>Application Fee (₦)</Label>
+            <Input 
+              type="number" 
+              defaultValue="5000" 
+              className="rounded-lg w-32"
+            />
+            <p className="text-xs text-muted-foreground">
+              Standard fee for certificate issuance
+            </p>
+          </div>
+          
+          <Button className="bg-teal-600 hover:bg-teal-700">
+            Save Settings
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
