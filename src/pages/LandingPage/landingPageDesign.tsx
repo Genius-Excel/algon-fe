@@ -1,12 +1,13 @@
-import { Button } from "../components/ui/button";
-import { Navigation } from "../components/Navigation";
-import { Shield, CheckCircle, Search, Lock, Clock, FileCheck } from "lucide-react";
+// src/pages/Landing/LandingDesign.tsx
+import React from 'react';
+import { Button } from '../../components/ui/button';
+import { Navigation } from '../../components/Navigation';
+import { Shield, CheckCircle, Search, Lock, Clock, FileCheck } from 'lucide-react';
+import type { NavigationProps } from '../../Types/types';
 
-interface LandingProps {
-  onNavigate: (page: string) => void;
-}
+interface LandingDesignProps extends NavigationProps {}
 
-export function Landing({ onNavigate }: LandingProps) {
+export function LandingDesign({ onNavigate }: LandingDesignProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-secondary/10">
       <Navigation onNavigate={onNavigate} />
@@ -106,7 +107,7 @@ export function Landing({ onNavigate }: LandingProps) {
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="text-foreground">LGCIVS</div>
+                  <div className="text-foreground font-semibold">LGCIVS</div>
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
@@ -114,7 +115,7 @@ export function Landing({ onNavigate }: LandingProps) {
               </p>
             </div>
             <div>
-              <h4 className="mb-4">Quick Links</h4>
+              <h4 className="mb-4 font-semibold">Quick Links</h4>
               <div className="space-y-2 text-sm">
                 <div className="text-muted-foreground hover:text-primary cursor-pointer">About Us</div>
                 <div className="text-muted-foreground hover:text-primary cursor-pointer">FAQs</div>
@@ -122,14 +123,14 @@ export function Landing({ onNavigate }: LandingProps) {
               </div>
             </div>
             <div>
-              <h4 className="mb-4">Legal</h4>
+              <h4 className="mb-4 font-semibold">Legal</h4>
               <div className="space-y-2 text-sm">
                 <div className="text-muted-foreground hover:text-primary cursor-pointer">Privacy Policy</div>
                 <div className="text-muted-foreground hover:text-primary cursor-pointer">Terms of Service</div>
               </div>
             </div>
             <div>
-              <h4 className="mb-4">Support</h4>
+              <h4 className="mb-4 font-semibold">Support</h4>
               <div className="space-y-2 text-sm">
                 <div className="text-muted-foreground">Email: support@lgcivs.gov.ng</div>
                 <div className="text-muted-foreground">Phone: +234 800 000 0000</div>
@@ -145,25 +146,37 @@ export function Landing({ onNavigate }: LandingProps) {
   );
 }
 
-function FeatureCard({ icon: Icon, title, description }: { icon: any; title: string; description: string }) {
+interface FeatureCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+}
+
+function FeatureCard({ icon: Icon, title, description }: FeatureCardProps) {
   return (
     <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="w-12 h-12 rounded-xl bg-secondary/20 flex items-center justify-center mb-4">
         <Icon className="w-6 h-6 text-primary" />
       </div>
-      <h3 className="mb-2">{title}</h3>
+      <h3 className="mb-2 font-semibold">{title}</h3>
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>
   );
 }
 
-function StepCard({ step, title, description }: { step: string; title: string; description: string }) {
+interface StepCardProps {
+  step: string;
+  title: string;
+  description: string;
+}
+
+function StepCard({ step, title, description }: StepCardProps) {
   return (
     <div className="text-center space-y-3">
-      <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center mx-auto text-2xl">
+      <div className="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center mx-auto text-2xl font-semibold">
         {step}
       </div>
-      <h4>{title}</h4>
+      <h4 className="font-semibold">{title}</h4>
       <p className="text-sm text-muted-foreground">{description}</p>
     </div>
   );

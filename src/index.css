@@ -2272,123 +2272,123 @@
     background-color: var(--muted);
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:block {
       display: block;
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:w-48 {
       width: calc(var(--spacing) * 48);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:max-w-lg {
       max-width: var(--container-lg);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:flex-row {
       flex-direction: row;
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:justify-end {
       justify-content: flex-end;
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:p-6 {
       padding: calc(var(--spacing) * 6);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:px-6 {
       padding-inline: calc(var(--spacing) * 6);
     }
   }
 
-  @media (width >= 40rem) {
+  @media (min-width: 40rem) {
     .sm\:text-left {
       text-align: left;
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:flex {
       display: flex;
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:hidden {
       display: none;
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:grid-cols-3 {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:grid-cols-4 {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:py-24 {
       padding-block: calc(var(--spacing) * 24);
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:text-6xl {
       font-size: var(--text-6xl);
       line-height: var(--tw-leading, var(--text-6xl--line-height));
     }
   }
 
-  @media (width >= 48rem) {
+  @media (min-width: 48rem) {
     .md\:text-sm {
       font-size: var(--text-sm);
       line-height: var(--tw-leading, var(--text-sm--line-height));
     }
   }
 
-  @media (width >= 64rem) {
+  @media (min-width: 64rem) {
     .lg\:grid-cols-2 {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 64rem) {
+  @media (min-width: 64rem) {
     .lg\:grid-cols-4 {
       grid-template-columns: repeat(4, minmax(0, 1fr));
     }
   }
 
-  @media (width >= 64rem) {
+  @media (min-width: 64rem) {
     .lg\:p-8 {
       padding: calc(var(--spacing) * 8);
     }
   }
 
-  @media (width >= 64rem) {
+  @media (min-width: 64rem) {
     .lg\:px-8 {
       padding-inline: calc(var(--spacing) * 8);
     }

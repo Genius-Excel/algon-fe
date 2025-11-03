@@ -1,135 +1,213 @@
-// API service functions for LGCIVS application
-// This file contains all API calls for the Local Government Certificate Issuance and Verification System
+// services/api.ts - Enhanced with validation and error handling
+import { 
+  validateNIN, 
+  validateEmail, 
+  validatePhone, 
+  validatePassword,
+  buildFormData,
+  handleApiError 
+} from '../utils/validation';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
-// Generic API request function
-async function apiRequest(endpoint: string, options: RequestInit = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+// Types
+export interface ApiResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  nin: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+}
+
+export interface ApplicationRequest {
+  fullName: string;
+  nin: string;
+  dob: string;
+  state: string;
+  lga: string;
+  village: string;
+  phone: string;
+  email: string;
+  profilePhoto?: File;
+  ninSlip?: File;
+  address: string;
+  landmark: string;
+}
+
+// API Request Handler with automatic token injection
+async function apiRequest<T = any>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const token = localStorage.getItem('authToken');
   
-  const defaultOptions: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      // Add authentication headers here if needed
-      // 'Authorization': `Bearer ${getAuthToken()}`,
-    },
-    ...options,
+  const defaultHeaders: HeadersInit = {
+    'Content-Type': 'application/json',
   };
+
+  if (token) {
+    defaultHeaders['Authorization'] = `Bearer ${token}`;
+  }
 
   // Don't set Content-Type for FormData
   if (options.body instanceof FormData) {
-    const headers = defaultOptions.headers as Record<string, string>;
-    delete headers['Content-Type'];
+    delete defaultHeaders['Content-Type'];
   }
 
+  const config: RequestInit = {
+    ...options,
+    headers: {
+      ...defaultHeaders,
+      ...options.headers,
+    },
+  };
+
   try {
-    const response = await fetch(url, defaultOptions);
-    
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    const data = await response.json();
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      return {
+        success: false,
+        error: data.message || `HTTP error! status: ${response.status}`,
+      };
     }
-    
-    return await response.json();
+
+    return {
+      success: true,
+      data,
+    };
   } catch (error) {
     console.error(`API request failed for ${endpoint}:`, error);
-    throw error;
+    return {
+      success: false,
+      error: handleApiError(error),
+    };
   }
 }
 
-// Admin Onboarding API
-export const adminOnboardingAPI = {
-  // Complete admin onboarding
-  completeOnboarding: async (onboardingData: {
-    fullName: string;
-    email: string;
-    phone: string;
-    password: string;
-    state: string;
-    localGovernment: string;
-    permissions: {
-      approveApplications: boolean;
-      manageFees: boolean;
-      manageRequirements: boolean;
-      viewAnalytics: boolean;
-      exportData: boolean;
-    };
-  }) => {
-    return apiRequest('/admin/onboarding/', {
+// Authentication API
+export const authAPI = {
+  login: async (email: string, password: string): Promise<ApiResponse> => {
+    // Client-side validation
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.valid) {
+      return { success: false, error: emailValidation.message };
+    }
+
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.valid) {
+      return { success: false, error: passwordValidation.message };
+    }
+
+    return apiRequest('/auth/login/', {
       method: 'POST',
-      body: JSON.stringify(onboardingData),
+      body: JSON.stringify({ email, password }),
     });
   },
 
-  // Get states list
-  getStates: async () => {
-    return apiRequest('/states/');
-  },
+  register: async (data: RegisterRequest): Promise<ApiResponse> => {
+    // Validate all fields
+    const ninValidation = validateNIN(data.nin);
+    if (!ninValidation.valid) {
+      return { success: false, error: ninValidation.message };
+    }
 
-  // Get local governments for a state
-  getLocalGovernments: async (stateId: string) => {
-    return apiRequest(`/lgs/?state=${stateId}`);
-  },
-};
+    const emailValidation = validateEmail(data.email);
+    if (!emailValidation.valid) {
+      return { success: false, error: emailValidation.message };
+    }
 
-// Dynamic Field Requirements API
-export const requirementsAPI = {
-  // Get all dynamic fields for a local government
-  getRequirements: async (lgId?: string) => {
-    const endpoint = lgId ? `/lg/requirements/?lg=${lgId}` : '/lg/requirements/';
-    return apiRequest(endpoint);
-  },
+    const phoneValidation = validatePhone(data.phone);
+    if (!phoneValidation.valid) {
+      return { success: false, error: phoneValidation.message };
+    }
 
-  // Create a new dynamic field
-  createRequirement: async (fieldData: {
-    field_label: string;
-    field_type: 'text' | 'number' | 'date' | 'file' | 'dropdown';
-    is_required: boolean;
-    dropdown_options?: string[]; // For dropdown fields
-  }) => {
-    return apiRequest('/lg/requirements/', {
+    const passwordValidation = validatePassword(data.password, data.confirmPassword);
+    if (!passwordValidation.valid) {
+      return { success: false, error: passwordValidation.message };
+    }
+
+    return apiRequest('/auth/register/', {
       method: 'POST',
-      body: JSON.stringify(fieldData),
+      body: JSON.stringify({
+        nin: data.nin,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+      }),
     });
   },
 
-  // Update an existing dynamic field
-  updateRequirement: async (fieldId: string, fieldData: {
-    field_label: string;
-    field_type: 'text' | 'number' | 'date' | 'file' | 'dropdown';
-    is_required: boolean;
-    dropdown_options?: string[];
-  }) => {
-    return apiRequest(`/lg/requirements/${fieldId}/`, {
-      method: 'PUT',
-      body: JSON.stringify(fieldData),
+  logout: async (): Promise<ApiResponse> => {
+    return apiRequest('/auth/logout/', {
+      method: 'POST',
     });
   },
 
-  // Delete a dynamic field
-  deleteRequirement: async (fieldId: string) => {
-    return apiRequest(`/lg/requirements/${fieldId}/`, {
-      method: 'DELETE',
+  getProfile: async (): Promise<ApiResponse> => {
+    return apiRequest('/auth/profile/');
+  },
+
+  refreshToken: async (): Promise<ApiResponse> => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    return apiRequest('/auth/refresh/', {
+      method: 'POST',
+      body: JSON.stringify({ refresh: refreshToken }),
     });
   },
 };
 
 // Applications API
 export const applicationsAPI = {
-  // Submit a new application with profile photo
-  submitApplication: async (applicationData: FormData) => {
+  submit: async (data: ApplicationRequest): Promise<ApiResponse> => {
+    // Validate required fields
+    if (!data.fullName?.trim()) {
+      return { success: false, error: 'Full name is required' };
+    }
+
+    const ninValidation = validateNIN(data.nin);
+    if (!ninValidation.valid) {
+      return { success: false, error: ninValidation.message };
+    }
+
+    const phoneValidation = validatePhone(data.phone);
+    if (!phoneValidation.valid) {
+      return { success: false, error: phoneValidation.message };
+    }
+
+    const emailValidation = validateEmail(data.email);
+    if (!emailValidation.valid) {
+      return { success: false, error: emailValidation.message };
+    }
+
+    // Build FormData for file upload
+    const formData = buildFormData(data);
+
     return apiRequest('/applications/', {
       method: 'POST',
-      body: applicationData, // FormData for file upload
+      body: formData,
     });
   },
 
-  // Get all applications (for admin)
-  getApplications: async (filters?: {
+  getAll: async (filters?: {
     status?: string;
     lg?: string;
     page?: number;
     limit?: number;
-  }) => {
+  }): Promise<ApiResponse> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -138,74 +216,114 @@ export const applicationsAPI = {
         }
       });
     }
-    
+
     const endpoint = `/applications/${params.toString() ? `?${params.toString()}` : ''}`;
     return apiRequest(endpoint);
   },
 
-  // Get single application details
-  getApplication: async (applicationId: string) => {
-    return apiRequest(`/applications/${applicationId}/`);
+  getById: async (id: string): Promise<ApiResponse> => {
+    return apiRequest(`/applications/${id}/`);
   },
 
-  // Update application status (approve/reject)
-  updateApplicationStatus: async (applicationId: string, status: 'approved' | 'rejected', comment?: string) => {
-    return apiRequest(`/applications/${applicationId}/status/`, {
+  updateStatus: async (
+    id: string,
+    status: 'approved' | 'rejected',
+    comment?: string
+  ): Promise<ApiResponse> => {
+    return apiRequest(`/applications/${id}/status/`, {
       method: 'PATCH',
       body: JSON.stringify({ status, comment }),
     });
   },
 
-  // Get applicant's own applications
-  getMyApplications: async () => {
+  getMy: async (): Promise<ApiResponse> => {
     return apiRequest('/applications/my/');
   },
 };
 
-// Certificate API
+// Certificates API
 export const certificatesAPI = {
-  // Download certificate
-  downloadCertificate: async (certificateId: string) => {
-    const response = await fetch(`${API_BASE_URL}/certificates/${certificateId}/download/`, {
-      headers: {
-        // Add auth headers
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to download certificate');
+  download: async (id: string): Promise<Blob | null> => {
+    try {
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(
+        `${API_BASE_URL}/certificates/${id}/download/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to download certificate');
+      }
+
+      return await response.blob();
+    } catch (error) {
+      console.error('Download error:', error);
+      return null;
     }
-    
-    return response.blob();
   },
 
-  // Verify certificate
-  verifyCertificate: async (certificateNumber: string) => {
+  verify: async (certificateNumber: string): Promise<ApiResponse> => {
+    if (!certificateNumber?.trim()) {
+      return { success: false, error: 'Certificate number is required' };
+    }
+
     return apiRequest(`/certificates/verify/${certificateNumber}/`);
   },
 
-  // Get certificate preview with applicant photo
-  getCertificatePreview: async (applicationId: string) => {
+  getPreview: async (applicationId: string): Promise<ApiResponse> => {
     return apiRequest(`/certificates/preview/${applicationId}/`);
   },
 };
 
 // Digitization API
 export const digitizationAPI = {
-  // Submit digitization request
-  submitDigitizationRequest: async (requestData: FormData) => {
+  submit: async (data: {
+    nin: string;
+    email: string;
+    phone: string;
+    lga: string;
+    certificateRef?: string;
+    certificateFile: File;
+    profilePhoto?: File;
+    ninSlip?: File;
+  }): Promise<ApiResponse> => {
+    // Validate fields
+    const ninValidation = validateNIN(data.nin);
+    if (!ninValidation.valid) {
+      return { success: false, error: ninValidation.message };
+    }
+
+    const emailValidation = validateEmail(data.email);
+    if (!emailValidation.valid) {
+      return { success: false, error: emailValidation.message };
+    }
+
+    const phoneValidation = validatePhone(data.phone);
+    if (!phoneValidation.valid) {
+      return { success: false, error: phoneValidation.message };
+    }
+
+    if (!data.certificateFile) {
+      return { success: false, error: 'Certificate file is required' };
+    }
+
+    const formData = buildFormData(data);
+
     return apiRequest('/digitization/requests/', {
       method: 'POST',
-      body: requestData,
+      body: formData,
     });
   },
 
-  // Get digitization requests (for admin)
-  getDigitizationRequests: async (filters?: {
+  getAll: async (filters?: {
     status?: string;
     page?: number;
     limit?: number;
-  }) => {
+  }): Promise<ApiResponse> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -214,76 +332,183 @@ export const digitizationAPI = {
         }
       });
     }
-    
+
     const endpoint = `/digitization/requests/${params.toString() ? `?${params.toString()}` : ''}`;
     return apiRequest(endpoint);
   },
 
-  // Update digitization request status
-  updateDigitizationStatus: async (requestId: string, status: 'approved' | 'rejected', comment?: string) => {
-    return apiRequest(`/digitization/requests/${requestId}/status/`, {
+  updateStatus: async (
+    id: string,
+    status: 'approved' | 'rejected',
+    comment?: string
+  ): Promise<ApiResponse> => {
+    return apiRequest(`/digitization/requests/${id}/status/`, {
       method: 'PATCH',
       body: JSON.stringify({ status, comment }),
     });
   },
 };
 
+// Admin Onboarding API
+export const adminOnboardingAPI = {
+  complete: async (data: {
+    fullName: string;
+    phone: string;
+    password: string;
+    state: string;
+    localGovernment: string;
+    permissions: Record<string, boolean>;
+  }): Promise<ApiResponse> => {
+    // Validate fields
+    if (!data.fullName?.trim()) {
+      return { success: false, error: 'Full name is required' };
+    }
+
+    const phoneValidation = validatePhone(data.phone);
+    if (!phoneValidation.valid) {
+      return { success: false, error: phoneValidation.message };
+    }
+
+    const passwordValidation = validatePassword(data.password);
+    if (!passwordValidation.valid) {
+      return { success: false, error: passwordValidation.message };
+    }
+
+    return apiRequest('/admin/onboarding/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  getStates: async (): Promise<ApiResponse> => {
+    return apiRequest('/states/');
+  },
+
+  getLocalGovernments: async (stateId: string): Promise<ApiResponse> => {
+    return apiRequest(`/lgs/?state=${stateId}`);
+  },
+};
+
+// Dynamic Requirements API
+export const requirementsAPI = {
+  getAll: async (lgId?: string): Promise<ApiResponse> => {
+    const endpoint = lgId ? `/lg/requirements/?lg=${lgId}` : '/lg/requirements/';
+    return apiRequest(endpoint);
+  },
+
+  create: async (fieldData: {
+    field_label: string;
+    field_type: string;
+    is_required: boolean;
+    dropdown_options?: string[];
+  }): Promise<ApiResponse> => {
+    if (!fieldData.field_label?.trim()) {
+      return { success: false, error: 'Field label is required' };
+    }
+
+    if (fieldData.field_label.length < 3) {
+      return { success: false, error: 'Field label must be at least 3 characters' };
+    }
+
+    if (fieldData.field_type === 'dropdown' && (!fieldData.dropdown_options || fieldData.dropdown_options.length < 2)) {
+      return { success: false, error: 'Dropdown fields must have at least 2 options' };
+    }
+
+    return apiRequest('/lg/requirements/', {
+      method: 'POST',
+      body: JSON.stringify(fieldData),
+    });
+  },
+
+  update: async (
+    fieldId: string,
+    fieldData: {
+      field_label: string;
+      field_type: string;
+      is_required: boolean;
+      dropdown_options?: string[];
+    }
+  ): Promise<ApiResponse> => {
+    return apiRequest(`/lg/requirements/${fieldId}/`, {
+      method: 'PUT',
+      body: JSON.stringify(fieldData),
+    });
+  },
+
+  delete: async (fieldId: string): Promise<ApiResponse> => {
+    return apiRequest(`/lg/requirements/${fieldId}/`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 // Analytics API
 export const analyticsAPI = {
-  // Get dashboard statistics
-  getDashboardStats: async (lgId?: string) => {
+  getDashboardStats: async (lgId?: string): Promise<ApiResponse> => {
     const endpoint = lgId ? `/analytics/dashboard/?lg=${lgId}` : '/analytics/dashboard/';
     return apiRequest(endpoint);
   },
 
-  // Get application trends
-  getApplicationTrends: async (period: 'week' | 'month' | 'year', lgId?: string) => {
+  getApplicationTrends: async (
+    period: 'week' | 'month' | 'year',
+    lgId?: string
+  ): Promise<ApiResponse> => {
     const params = new URLSearchParams({ period });
     if (lgId) params.append('lg', lgId);
-    
+
     return apiRequest(`/analytics/trends/?${params.toString()}`);
   },
 
-  // Export data
-  exportData: async (type: 'applications' | 'certificates' | 'digitization', format: 'csv' | 'excel', filters?: any) => {
-    const params = new URLSearchParams({ type, format });
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          params.append(key, value.toString());
-        }
-      });
-    }
+  exportData: async (
+    type: 'applications' | 'certificates' | 'digitization',
+    format: 'csv' | 'excel',
+    filters?: any
+  ): Promise<Blob | null> => {
+    try {
+      const params = new URLSearchParams({ type, format });
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined) {
+            params.append(key, value.toString());
+          }
+        });
+      }
 
-    const response = await fetch(`${API_BASE_URL}/analytics/export/?${params.toString()}`, {
-      headers: {
-        // Add auth headers
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to export data');
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(
+        `${API_BASE_URL}/analytics/export/?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to export data');
+      }
+
+      return await response.blob();
+    } catch (error) {
+      console.error('Export error:', error);
+      return null;
     }
-    
-    return response.blob();
   },
 };
 
 // Settings API
 export const settingsAPI = {
-  // Get LG settings
-  getSettings: async (lgId?: string) => {
+  get: async (lgId?: string): Promise<ApiResponse> => {
     const endpoint = lgId ? `/settings/?lg=${lgId}` : '/settings/';
     return apiRequest(endpoint);
   },
 
-  // Update LG settings
-  updateSettings: async (settings: {
+  update: async (settings: {
     processingTimeDays?: number;
     applicationFee?: number;
     processingFee?: number;
     autoApproval?: boolean;
-  }) => {
+  }): Promise<ApiResponse> => {
     return apiRequest('/settings/', {
       method: 'PATCH',
       body: JSON.stringify(settings),
@@ -291,79 +516,13 @@ export const settingsAPI = {
   },
 };
 
-// Authentication API (if needed)
-export const authAPI = {
-  // Login
-  login: async (email: string, password: string) => {
-    return apiRequest('/auth/login/', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
-  },
-
-  // Logout
-  logout: async () => {
-    return apiRequest('/auth/logout/', {
-      method: 'POST',
-    });
-  },
-
-  // Refresh token
-  refreshToken: async (refreshToken: string) => {
-    return apiRequest('/auth/refresh/', {
-      method: 'POST',
-      body: JSON.stringify({ refresh: refreshToken }),
-    });
-  },
-
-  // Get user profile
-  getProfile: async () => {
-    return apiRequest('/auth/profile/');
-  },
-};
-
-// Utility functions
-export const utils = {
-  // Build FormData from object with file handling
-  buildFormData: (data: Record<string, any>): FormData => {
-    const formData = new FormData();
-    
-    Object.entries(data).forEach(([key, value]) => {
-      if (value instanceof File) {
-        formData.append(key, value);
-      } else if (value !== null && value !== undefined) {
-        formData.append(key, String(value));
-      }
-    });
-    
-    return formData;
-  },
-
-  // Handle API errors consistently
-  handleApiError: (error: any) => {
-    if (error.response) {
-      // Server responded with error status
-      const message = error.response.data?.message || 'An error occurred';
-      return { success: false, message, status: error.response.status };
-    } else if (error.request) {
-      // Request made but no response
-      return { success: false, message: 'Network error. Please check your connection.', status: 0 };
-    } else {
-      // Something else happened
-      return { success: false, message: error.message || 'An unexpected error occurred', status: 0 };
-    }
-  },
-};
-
-// Export all APIs as default
 export default {
-  adminOnboardingAPI,
-  requirementsAPI,
+  authAPI,
   applicationsAPI,
   certificatesAPI,
   digitizationAPI,
+  adminOnboardingAPI,
+  requirementsAPI,
   analyticsAPI,
   settingsAPI,
-  authAPI,
-  utils,
 };
