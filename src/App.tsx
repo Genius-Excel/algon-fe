@@ -10,7 +10,7 @@ import { SuperAdminDashboard } from "./pages/SuperAdminDashboard";
 import { DigitizationFlow } from "./pages/DigitizationFlow";
 import { AdminOnboarding } from "./pages/Admin/adminOnboardFunc";
 import { Toaster } from "./components/ui/sonner";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import type { ComponentType } from "react";
 
 export default function App() {
