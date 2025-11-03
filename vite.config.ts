@@ -12,7 +12,7 @@ export default defineConfig({
   },
   build: {
     target: 'esnext',
-    outDir: 'dist',
+    outDir: 'build',
     rollupOptions: {
       output: {
         manualChunks: {
