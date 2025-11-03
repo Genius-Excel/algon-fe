@@ -16,61 +16,31 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React libraries
-          "react-vendor": ["react", "react-dom", "react-router-dom"],
-
-          // Radix UI components - split into logical groups
-          "radix-ui-core": [
+          react: ["react", "react-dom", "react-router-dom"],
+          radix: [
             "@radix-ui/react-dialog",
             "@radix-ui/react-dropdown-menu",
             "@radix-ui/react-select",
             "@radix-ui/react-popover",
             "@radix-ui/react-tooltip",
-          ],
-          "radix-ui-extended": [
             "@radix-ui/react-accordion",
             "@radix-ui/react-alert-dialog",
-            "@radix-ui/react-aspect-ratio",
             "@radix-ui/react-avatar",
             "@radix-ui/react-checkbox",
-            "@radix-ui/react-collapsible",
-            "@radix-ui/react-context-menu",
-            "@radix-ui/react-hover-card",
-            "@radix-ui/react-label",
-            "@radix-ui/react-menubar",
-            "@radix-ui/react-navigation-menu",
-            "@radix-ui/react-progress",
-            "@radix-ui/react-radio-group",
-            "@radix-ui/react-scroll-area",
-            "@radix-ui/react-separator",
-            "@radix-ui/react-slider",
-            "@radix-ui/react-slot",
-            "@radix-ui/react-switch",
             "@radix-ui/react-tabs",
             "@radix-ui/react-toggle",
             "@radix-ui/react-toggle-group",
+            "@radix-ui/react-scroll-area",
+            "@radix-ui/react-slider",
           ],
-
-          // Charts library
           charts: ["recharts"],
-
-          // UI utilities
-          "ui-utils": [
+          utils: [
             "lucide-react",
-            "class-variance-authority",
             "clsx",
+            "class-variance-authority",
             "tailwind-merge",
-            "cmdk",
             "sonner",
-            "vaul",
-            "next-themes",
           ],
-
-          // Form libraries
-          forms: ["react-hook-form", "react-day-picker", "input-otp"],
-
-          // Other UI libraries
-          "ui-misc": ["embla-carousel-react", "react-resizable-panels"],
         },
       },
     },
