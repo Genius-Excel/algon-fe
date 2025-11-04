@@ -1,15 +1,15 @@
 import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Shield, Building2, DollarSign, FileCheck, LogOut, Search, Menu, UserPlus, Edit, Power } from "lucide-react";
-import { StatsCard } from "../components/StatsCard";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
-import { Input } from "../components/ui/input";
-import { Badge } from "../components/ui/badge";
+import { StatsCard } from "../../components/StatsCard";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
+import { Input } from "../../components/ui/input";
+import { Badge } from "../../components/ui/badge";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
-import { Label } from "../components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 
 interface SuperAdminDashboardProps {
   onNavigate: (page: string) => void;
@@ -265,15 +265,15 @@ export function SuperAdminDashboard({ onNavigate }: SuperAdminDashboardProps) {
               {/* Search */}
               <Card className="rounded-xl">
                 <CardContent className="p-4">
-                  <div className="relative">
+                    <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input 
                       placeholder="Search by LGA name, state, or admin..."
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                       className="pl-10"
                     />
-                  </div>
+                    </div>
                 </CardContent>
               </Card>
 

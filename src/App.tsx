@@ -1,17 +1,18 @@
 import { Landing } from "./pages/LandingPage/landingPageFunc";
 import { Login } from "./pages/Login/loginFunc";
 import { Register } from "./pages/Register/registerFunc";
-import { ApplicationForm } from "./pages/ApplicationForm";
-import { ApplicantDashboard } from "./pages/ApplicantDashboard";
-import { CertificateDownload } from "./pages/CertificateDownload";
-import { CertificateVerification } from "./pages/CertificateVerification";
-import { LGAdminDashboard } from "./pages/LGAdminDashboard";
-import { SuperAdminDashboard } from "./pages/SuperAdminDashboard";
-import { DigitizationFlow } from "./pages/DigitizationFlow";
+import { ApplicationForm } from "./pages/Application/applicationFormFunc";
+import { ApplicantDashboard } from "./pages/Applicant/applicantDashboardFunc";
+import { CertificateDownload } from "./pages/Certificate/certificateDownloadFunc";
+import { CertificateVerification } from "./pages/Certificate/certificateVerificationFunc";
+import { LGAdminDashboard } from "./pages/LGADashboard/lgAdminDashboardFunc";
+import { SuperAdminDashboard } from "./pages/SuperAdmin/superAdminDashboard";
+import { DigitizationFlow } from "./pages/Digitalization/digitizationFunc";
 import { AdminOnboarding } from "./pages/Admin/adminOnboardFunc";
 import { Toaster } from "./components/ui/sonner";
 import { BrowserRouter, Route, Routes, useNavigate } from "react-router-dom";
 import type { ComponentType } from "react";
+import { ApplicantDashboardDesign } from "./pages/Applicant/applicantDashboardDesign";
 
 export default function App() {
   // route name -> path mapping (keeps existing onNavigate string API working)
