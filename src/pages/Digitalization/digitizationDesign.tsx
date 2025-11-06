@@ -1,5 +1,5 @@
 // src/pages/Digitization/digitizationFlowDesign.tsx
-import React from "react";
+import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -18,12 +18,23 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import {
   Upload,
   CheckCircle,
   FileText,
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  CreditCard,
+  Shield,
+  Loader2,
 } from "lucide-react";
 import {
   Logo,
@@ -42,19 +53,41 @@ interface DigitizationFlowDesignProps {
   progress: number;
   formData: DigitizationFormData;
   setFormData: (data: DigitizationFormData) => void;
+
   photoPreview: string | null;
-  ninSlipPreview: string | null;
-  uploadedFile: string | null;
-  setUploadedFile: (file: string | null) => void;
+  photoFile: File | null;
+  photoUploading: boolean;
+  photoProgress: number;
+  photoError: string | null;
   handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removePhoto: () => void;
+
+  ninSlipPreview: string | null;
+  ninSlipFile: File | null;
+  ninSlipUploading: boolean;
+  ninSlipProgress: number;
+  ninSlipError: string | null;
   handleNinSlipUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   removeNinSlip: () => void;
+
+  certificatePreview: string | null;
+  certificateFile: File | null;
+  certificateUploading: boolean;
+  certificateProgress: number;
+  certificateError: string | null;
+  handleCertificateUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  removeCertificate: () => void;
+
+  digitizationAmount: number;
+  paymentReference: string;
+  isInitializingPayment: boolean;
+  handleProceedToPayment: () => void;
+
   handleNext: () => void;
   handleBack: () => void;
   handleSubmit: () => void;
   onCancel: () => void;
-  isSubmitting?: boolean;
+  isSubmitting: boolean;
 }
 
 interface Step1Props {
@@ -69,15 +102,16 @@ interface Step1Props {
 }
 
 interface Step2Props {
-  uploadedFile: string | null;
-  setUploadedFile: (file: string | null) => void;
+  certificatePreview: string | null;
+  handleCertificateUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  removeCertificate: () => void;
   formData: DigitizationFormData;
   setFormData: (data: DigitizationFormData) => void;
 }
 
 interface Step3Props {
-  formData: DigitizationFormData;
-  setFormData: (data: DigitizationFormData) => void;
+  digitizationAmount: number;
+  paymentReference: string;
 }
 
 interface Step4Props {
@@ -96,19 +130,34 @@ export function DigitizationFlowDesign({
   setFormData,
   photoPreview,
   ninSlipPreview,
-  uploadedFile,
-  setUploadedFile,
+  certificatePreview,
   handlePhotoUpload,
   removePhoto,
   handleNinSlipUpload,
   removeNinSlip,
+  handleCertificateUpload,
+  removeCertificate,
+  digitizationAmount,
+  paymentReference,
+  isInitializingPayment,
+  handleProceedToPayment,
   handleNext,
   handleBack,
   handleSubmit,
   onCancel,
-  isSubmitting = false
+  isSubmitting = false,
 }: DigitizationFlowDesignProps) {
   const steps = ["Verify Identity", "Upload", "Payment", "Confirmation"];
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
+  const handleCancelClick = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = () => {
+    setShowCancelModal(false);
+    onCancel();
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/20 to-white py-8 px-4">
@@ -120,7 +169,8 @@ export function DigitizationFlowDesign({
           </div>
           <h2 className="text-xl mb-2">Certificate Digitization</h2>
           <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-            Convert your existing hard copy certificate to a digital version with QR code verification
+            Convert your existing hard copy certificate to a digital version
+            with QR code verification
           </p>
           <p className="text-sm text-muted-foreground mt-2">
             Step {currentStep} of {totalSteps}
@@ -150,14 +200,18 @@ export function DigitizationFlowDesign({
           )}
           {currentStep === 2 && (
             <Step2
-              uploadedFile={uploadedFile}
-              setUploadedFile={setUploadedFile}
+              certificatePreview={certificatePreview}
+              handleCertificateUpload={handleCertificateUpload}
+              removeCertificate={removeCertificate}
               formData={formData}
               setFormData={setFormData}
             />
           )}
           {currentStep === 3 && (
-            <Step3 formData={formData} setFormData={setFormData} />
+            <Step3
+              digitizationAmount={digitizationAmount}
+              paymentReference={paymentReference}
+            />
           )}
           {currentStep === 4 && <Step4 formData={formData} />}
 
@@ -169,21 +223,38 @@ export function DigitizationFlowDesign({
                   variant="outline"
                   onClick={handleBack}
                   className="rounded-lg"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isInitializingPayment}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>
               )}
               {currentStep < totalSteps ? (
-                <Button
-                  onClick={handleNext}
-                  className="ml-auto rounded-lg bg-primary hover:bg-primary/90"
-                  disabled={isSubmitting}
-                >
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                currentStep === 3 && !paymentReference ? (
+                  <Button
+                    onClick={handleProceedToPayment}
+                    className="ml-auto rounded-lg bg-primary hover:bg-primary/90"
+                    disabled={isInitializingPayment}
+                  >
+                    {isInitializingPayment ? (
+                      "Initializing..."
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Proceed to Payment
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={handleNext}
+                    className="ml-auto rounded-lg bg-primary hover:bg-primary/90"
+                    disabled={isSubmitting}
+                  >
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                )
               ) : (
                 <Button
                   onClick={handleSubmit}
@@ -201,13 +272,34 @@ export function DigitizationFlowDesign({
         {/* Cancel Link */}
         <div className="mt-6 text-center">
           <button
-            onClick={onCancel}
+            onClick={handleCancelClick}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
             disabled={isSubmitting}
           >
             ← Cancel and return to dashboard
           </button>
         </div>
+
+        {/* Minimal Cancel Confirmation Modal */}
+        <Dialog open={showCancelModal} onOpenChange={setShowCancelModal}>
+          <DialogContent className="sm:max-w-[400px]">
+            <DialogHeader>
+              <DialogTitle>Cancel Digitization?</DialogTitle>
+              <DialogDescription>Your progress will be lost.</DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setShowCancelModal(false)}
+              >
+                Continue
+              </Button>
+              <Button variant="destructive" onClick={handleConfirmCancel}>
+                Yes, Cancel
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageContainer>
     </div>
   );
@@ -389,9 +481,7 @@ function Step1({
           <Label htmlFor="lga">Local Government *</Label>
           <Select
             value={formData.lga}
-            onValueChange={(value) =>
-              setFormData({ ...formData, lga: value })
-            }
+            onValueChange={(value) => setFormData({ ...formData, lga: value })}
           >
             <SelectTrigger id="lga" className="rounded-lg">
               <SelectValue placeholder="Select your LGA" />
@@ -412,18 +502,12 @@ function Step1({
 
 // Step 2: Upload Certificate
 function Step2({
-  uploadedFile,
-  setUploadedFile,
+  certificatePreview,
+  handleCertificateUpload,
+  removeCertificate,
   formData,
   setFormData,
 }: Step2Props) {
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFile(file.name);
-    }
-  };
-
   return (
     <>
       <CardHeader>
@@ -435,27 +519,49 @@ function Step2({
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="certificate-upload">Certificate Document *</Label>
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+          <div className="space-y-3">
             <input
               type="file"
               accept=".pdf,.jpg,.jpeg,.png"
-              onChange={handleFileChange}
+              onChange={handleCertificateUpload}
               className="hidden"
               id="certificate-upload"
             />
-            <label htmlFor="certificate-upload" className="cursor-pointer">
+            <label
+              htmlFor="certificate-upload"
+              className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer block"
+            >
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm">Click to upload or drag and drop</p>
               <p className="text-xs text-muted-foreground mt-1">
-                PDF, PNG, JPG (MAX. 10MB)
+                PDF, PNG, JPG (MAX. 5MB)
               </p>
-              {uploadedFile && (
-                <div className="mt-4 flex items-center justify-center gap-2 text-green-600">
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="text-sm">{uploadedFile}</span>
-                </div>
-              )}
             </label>
+
+            {certificatePreview && (
+              <div className="flex justify-center">
+                <div className="relative">
+                  {certificatePreview === "pdf" ? (
+                    <div className="w-32 h-32 bg-red-100 border-2 border-red-200 rounded-lg flex items-center justify-center">
+                      <FileText className="w-12 h-12 text-red-600" />
+                    </div>
+                  ) : (
+                    <img
+                      src={certificatePreview}
+                      alt="Certificate preview"
+                      className="w-32 h-32 rounded-lg object-cover border-2 border-border"
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={removeCertificate}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-sm hover:bg-red-600 transition-colors"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -479,7 +585,9 @@ function Step2({
         </div>
 
         <div className="bg-secondary/20 rounded-lg p-4">
-          <p className="text-sm mb-2">Example of acceptable certificate image:</p>
+          <p className="text-sm mb-2">
+            Example of acceptable certificate image:
+          </p>
           <div className="border border-border rounded-lg overflow-hidden bg-white">
             <div className="p-6 text-center">
               <FileText className="w-16 h-16 mx-auto text-muted-foreground mb-2" />
@@ -498,62 +606,131 @@ function Step2({
 }
 
 // Step 3: Payment
-function Step3({ formData, setFormData }: Step3Props) {
+function Step3({ digitizationAmount, paymentReference }: Step3Props) {
+  const processingFee = 500;
+  const digitizationFee = digitizationAmount - processingFee;
+
   return (
     <>
       <CardHeader>
-        <CardTitle>Payment - Reduced Fee</CardTitle>
+        <CardTitle>Payment</CardTitle>
         <CardDescription>
-          Complete payment to process your certificate digitization
+          Complete payment to digitize your certificate
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Payment Breakdown */}
         <div className="bg-secondary/20 rounded-xl p-6">
-          <div className="flex justify-between items-center mb-4">
-            <span className="text-muted-foreground">Digitization Fee</span>
-            <span className="text-2xl">₦2,000</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-muted-foreground">Processing Fee</span>
-            <span>₦300</span>
-          </div>
-          <div className="border-t border-border mt-4 pt-4 flex justify-between items-center">
-            <span>Total Amount</span>
-            <span className="text-2xl text-primary">₦2,300</span>
+          <h4 className="font-semibold mb-4">Payment Summary</h4>
+
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">
+                Certificate Digitization Fee
+              </span>
+              <span className="text-lg">
+                ₦{digitizationFee.toLocaleString()}
+              </span>
+            </div>
+
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-muted-foreground">Processing Fee</span>
+              <span>₦{processingFee.toLocaleString()}</span>
+            </div>
+
+            <div className="border-t border-border pt-3 flex justify-between items-center">
+              <span className="font-semibold">Total Amount</span>
+              <span className="text-3xl font-bold text-primary">
+                ₦{digitizationAmount.toLocaleString()}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-900">
-            <span className="text-green-800">💡 Reduced Fee:</span> This is a
-            one-time fee to convert your hard copy certificate to a digital
-            version. This is significantly lower than applying for a new
-            certificate (₦5,500).
-          </p>
+        {/* Payment Reference */}
+        {paymentReference && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-green-900">
+                  Payment Initialized
+                </p>
+                <p className="text-xs text-green-700 mt-1 font-mono">
+                  Reference: {paymentReference}
+                </p>
+                <p className="text-xs text-green-600 mt-2">
+                  ✓ Complete payment in the popup window, then submit your
+                  request.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Instructions */}
+        {!paymentReference && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <CreditCard className="w-5 h-5 text-blue-600 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 mb-2">
+                  Digitization Payment
+                </p>
+                <p className="text-xs text-blue-700">
+                  This payment is for digitizing your existing certificate. Your
+                  old certificate will be converted to a secure digital format
+                  with QR verification.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Features */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-secondary/10 rounded-lg">
+            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <CheckCircle className="w-5 h-5 text-green-600" />
+            </div>
+            <p className="text-sm font-medium">Secure Payment</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              256-bit SSL encryption
+            </p>
+          </div>
+
+          <div className="text-center p-4 bg-secondary/10 rounded-lg">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <CreditCard className="w-5 h-5 text-blue-600" />
+            </div>
+            <p className="text-sm font-medium">Multiple Options</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Card, Bank, USSD
+            </p>
+          </div>
+
+          <div className="text-center p-4 bg-secondary/10 rounded-lg">
+            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Shield className="w-5 h-5 text-purple-600" />
+            </div>
+            <p className="text-sm font-medium">PCI Compliant</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Powered by Paystack
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="paymentMethod">Payment Method *</Label>
-          <Select
-            value={formData.paymentMethod}
-            onValueChange={(value) =>
-              setFormData({ ...formData, paymentMethod: value })
-            }
-          >
-            <SelectTrigger id="paymentMethod" className="rounded-lg">
-              <SelectValue placeholder="Select payment method" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="card">Debit/Credit Card</SelectItem>
-              <SelectItem value="bank">Bank Transfer</SelectItem>
-              <SelectItem value="ussd">USSD</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Security Badge */}
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fillRule="evenodd"
+              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>Your payment information is secure and encrypted</span>
         </div>
-
-        <Button className="w-full rounded-lg" variant="outline">
-          Proceed to Payment Gateway
-        </Button>
       </CardContent>
     </>
   );

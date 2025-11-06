@@ -77,7 +77,7 @@ export interface ApplicationFormData {
   ninSlip: File | null;
   landmark: string;
   address: string;
-  paymentMethod: string;
+  paymentReference?: string;
 }
 
 export interface ApplicationStepProps {
@@ -95,7 +95,7 @@ export interface DigitizationFormData {
   phone: string;
   lga: string;
   certificateRef: string;
-  paymentMethod: string;
+  paymentReference?: string;
   profilePhoto: File | null;
   ninSlip: File | null;
 }
@@ -365,3 +365,16 @@ export type Optional<T> = T | undefined;
 export type DeepPartial<T> = {
   [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
+
+// ============================================================================
+// PAYMENT
+// ============================================================================
+export interface Payment {
+  id: number;
+  reference: string;
+  amount: number;
+  status: 'pending' | 'success' | 'failed';
+  date: string;
+  channel?: string;
+  metadata?: Record<string, any>;
+}

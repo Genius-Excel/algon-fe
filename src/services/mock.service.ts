@@ -17,7 +17,7 @@ import type {
 } from '../Types/types';
 
 // Simulate network delay
-const delay = (ms: number = 800) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Mock Authentication
 export const mockAuthService = {
@@ -301,5 +301,77 @@ export const mockAdminService = {
       results: mockAuditLog,
       count: mockAuditLog.length
     };
+  }
+};
+
+// ============================================================================
+// PAYMENT SERVICE MOCK
+// ============================================================================
+
+export const mockPaymentService = {
+  async initializePayment(data: any) {
+    await delay(800);
+    
+    const reference = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+    
+    console.log('Mock Payment Initialized:', {
+      email: data.email,
+      amount: data.amount,
+      reference: reference,
+      metadata: data.metadata
+    });
+    
+    return {
+      status: true,
+      message: 'Authorization URL created',
+      data: {
+        authorization_url: `https://checkout.paystack.com/mock/${reference}`,
+        access_code: 'mock_access_code_' + Date.now(),
+        reference: reference,
+      }
+    };
+  },
+
+  async verifyPayment(data: any) {
+    await delay(1500);
+    
+    console.log('Mock Payment Verified:', data.reference);
+    
+    // In mock mode, all payments succeed
+    return {
+      status: 'success',
+      message: 'Verification successful',
+      data: {
+        reference: data.reference,
+        amount: 550000, // Amount in kobo
+        channel: 'card',
+        currency: 'NGN',
+        paid_at: new Date().toISOString(),
+        status: 'success',
+      }
+    };
+  },
+
+  async getPaymentHistory() {
+    await delay();
+    
+    return [
+      {
+        id: 1,
+        reference: 'PAY-2025-123456',
+        amount: 5500,
+        status: 'success',
+        date: '2025-10-20',
+        channel: 'card'
+      },
+      {
+        id: 2,
+        reference: 'PAY-2025-123457',
+        amount: 2300,
+        status: 'success',
+        date: '2025-10-18',
+        channel: 'bank_transfer'
+      }
+    ];
   }
 };
