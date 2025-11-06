@@ -20,23 +20,47 @@ import type {
 const delay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Mock Authentication
+// Mock Authentication
 export const mockAuthService = {
   async login(email: string, password: string) {
     await delay();
     
-    // Determine user type based on email
+    const emailLower = email.toLowerCase();
+    
+    // ✅ Determine user type based on email
     let user;
-    if (email.includes('admin@') || email.includes('lg-admin')) {
-      user = mockUsers.lgAdmin;
-    } else if (email.includes('super') || email.includes('superadmin')) {
-      user = mockUsers.superAdmin;
+    
+    if (emailLower.includes('superadmin')) {
+      user = {
+        id: '3',
+        email: email,
+        role: 'superAdmin' as const, // ✅ Matches UserRole type
+        name: 'Super Admin',
+        phone: '080-SUPER-ADMIN',
+      };
+    } else if (emailLower.includes('admin')) {
+      user = {
+        id: '2',
+        email: email,
+        role: 'admin' as const, // ✅ Matches UserRole type
+        name: 'LG Admin',
+        phone: '080-LG-ADMIN',
+      };
     } else {
-      user = mockUsers.applicant;
+      user = {
+        id: '1',
+        email: email,
+        role: 'applicant' as const, // ✅ Matches UserRole type
+        name: 'Applicant User',
+        phone: '080-APPLICANT',
+      };
     }
 
+    console.log('🔐 Mock Login Response:', { email: emailLower, user });
+
     return {
-      access: 'mock-access-token',
-      refresh: 'mock-refresh-token',
+      access: 'mock-access-token-' + Date.now(),
+      refresh: 'mock-refresh-token-' + Date.now(),
       user
     };
   },
@@ -45,8 +69,8 @@ export const mockAuthService = {
     await delay();
     
     return {
-      access: 'mock-access-token',
-      refresh: 'mock-refresh-token',
+      access: 'mock-access-token-' + Date.now(),
+      refresh: 'mock-refresh-token-' + Date.now(),
       user: {
         id: 'new-user-' + Date.now(),
         email: data.email,
@@ -65,7 +89,14 @@ export const mockAuthService = {
 
   async getCurrentUser() {
     await delay();
-    return mockUsers.applicant;
+    // Return stored user data or default applicant
+    const userData = JSON.parse(localStorage.getItem('user_data') || 'null');
+    return userData || {
+      id: '1',
+      email: 'user@example.com',
+      role: 'applicant' as const,
+      name: 'Applicant User',
+    };
   }
 };
 

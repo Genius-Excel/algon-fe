@@ -11,7 +11,7 @@ import { ComponentType } from 'react';
 // USER & AUTHENTICATION
 // ============================================================================
 
-export type UserRole = 'applicant' | 'lg-admin' | 'super-admin';
+export type UserRole = 'applicant' | 'admin' | 'superAdmin';
 
 export interface User {
   id: string;

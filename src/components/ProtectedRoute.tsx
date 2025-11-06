@@ -22,12 +22,22 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   }
 
   if (!isAuthenticated) {
+    console.log('❌ Not authenticated, redirecting to /login');
     return <Navigate to="/login" replace />;
   }
 
   // Check role-based access
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    console.log('⚠️ Role not allowed:', user.role, 'Allowed:', allowedRoles);
+    
+    // ✅ Redirect to appropriate dashboard based on actual role
+    if (user.role === 'superAdmin') {
+      return <Navigate to="/super-admin-dashboard" replace />;
+    } else if (user.role === 'admin') {
+      return <Navigate to="/lg-admin-dashboard" replace />;
+    } else {
+      return <Navigate to="/applicant-dashboard" replace />;
+    }
   }
 
   return <>{children}</>;

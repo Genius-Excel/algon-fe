@@ -63,7 +63,7 @@ export default function App() {
           <Route
             path="/lg-admin-dashboard"
             element={
-              <ProtectedRoute allowedRoles={['lg-admin']}>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <LGAdminDashboard />
               </ProtectedRoute>
             }
@@ -71,7 +71,7 @@ export default function App() {
           <Route
             path="/admin-onboarding"
             element={
-              <ProtectedRoute allowedRoles={['lg-admin']}>
+              <ProtectedRoute allowedRoles={['admin']}>
                 <AdminOnboarding />
               </ProtectedRoute>
             }
@@ -81,7 +81,7 @@ export default function App() {
           <Route
             path="/super-admin-dashboard"
             element={
-              <ProtectedRoute allowedRoles={['super-admin']}>
+              <ProtectedRoute allowedRoles={['superAdmin']}>
                 <SuperAdminDashboard />
               </ProtectedRoute>
             }

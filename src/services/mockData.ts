@@ -398,3 +398,108 @@ export const mockCertificateData = {
   nin: "12345678901",
   expiryDate: "October 15, 2032"
 };
+
+// ============================================================================
+// AUTH SERVICE MOCK
+// ============================================================================
+
+export const mockAuthService = {
+  async login(credentials: any) {
+    await delay(1000);
+    
+    const email = credentials.email.toLowerCase();
+    
+    // Determine role based on email
+    let role: 'applicant' | 'lg_admin' | 'super_admin' = 'applicant';
+    let user: any;
+    
+    // ✅ Check for super admin first (most specific)
+    if (email.includes('superadmin')) {
+      role = 'super_admin';
+      user = {
+        id: 3,
+        email: email,
+        firstName: 'Super',
+        lastName: 'Admin',
+        role: 'super_admin',
+      };
+    }
+    // ✅ Then check for LG admin
+    else if (email.includes('admin')) {
+      role = 'lg_admin';
+      user = {
+        id: 2,
+        email: email,
+        firstName: 'LG',
+        lastName: 'Admin',
+        role: 'lg_admin',
+        lg: 'Ikeja',
+      };
+    }
+    // ✅ Default to applicant
+    else {
+      role = 'applicant';
+      user = {
+        id: 1,
+        email: email,
+        firstName: 'John',
+        lastName: 'Doe',
+        role: 'applicant',
+      };
+    }
+    
+    console.log('Mock Login:', { email, role, user });
+    
+    return {
+      access: 'mock_access_token_' + Date.now(),
+      refresh: 'mock_refresh_token_' + Date.now(),
+      user: user,
+    };
+  },
+
+  async register(data: any) {
+    await delay(1000);
+    
+    return {
+      access: 'mock_access_token_' + Date.now(),
+      refresh: 'mock_refresh_token_' + Date.now(),
+      user: {
+        id: Date.now(),
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        role: 'applicant',
+      },
+    };
+  },
+
+  async refreshToken(refresh: string) {
+    await delay(500);
+    
+    return {
+      access: 'mock_access_token_' + Date.now(),
+    };
+  },
+
+  async logout() {
+    await delay(300);
+    return { message: 'Logged out successfully' };
+  },
+
+  async getCurrentUser() {
+    await delay(300);
+    
+    // Return a default applicant user
+    return {
+      id: 1,
+      email: 'user@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      role: 'applicant',
+    };
+  },
+};
+
+function delay(arg0: number) {
+  throw new Error('Function not implemented.');
+}
