@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { useAuth } from "../../hooks/useAuth";
 
 interface RegisterFormData {
+  firstName: string;
+  lastName: string;
   nin: string;
   email: string;
   phone: string;
@@ -16,6 +18,8 @@ export function Register() {
   const navigate = useNavigate();
   const { register } = useAuth();
   const [formData, setFormData] = useState<RegisterFormData>({
+    firstName: "",
+    lastName: "",
     nin: "",
     email: "",
     phone: "",
@@ -27,6 +31,8 @@ export function Register() {
   const handleSubmit = async () => {
     // ✅ Client-side validation
     if (
+      !formData.firstName ||
+      !formData.lastName ||
       !formData.nin ||
       !formData.email ||
       !formData.phone ||
@@ -56,6 +62,8 @@ export function Register() {
     try {
       // ✅ Call API service with correct field name
       await register({
+        first_name: formData.firstName,
+        last_name: formData.lastName,
         nin: formData.nin,
         email: formData.email,
         phone_number: formData.phone,

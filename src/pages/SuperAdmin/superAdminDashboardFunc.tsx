@@ -34,14 +34,27 @@ export function SuperAdminDashboard() {
 
     try {
       if (activeTab === "lgas") {
-        const data = await adminService.getAllLGAs();
-        setLgas(data.results || []);
+        // Skip loading LGAs for now - endpoint not ready
+        console.log("Skipping LGAs load - endpoint not implemented yet");
+        setLgas([]);
       } else if (activeTab === "audit") {
-        const data = await adminService.getAuditLogs({
-          page: 1,
-          page_size: 50,
-        });
-        setAuditLog(data.results || []);
+        // Load audit logs
+        try {
+          const data = await adminService.getAuditLogs({
+            page: 1,
+            page_size: 50,
+          });
+          console.log("📋 Audit logs response:", data);
+          setAuditLog(data.data?.results || data.results || []);
+        } catch (auditError: any) {
+          console.error("Audit logs error:", auditError);
+          if (auditError.response?.status === 404) {
+            console.warn("Audit logs endpoint not available yet");
+            setAuditLog([]);
+          } else {
+            throw auditError;
+          }
+        }
       } else if (activeTab === "dashboard") {
         const response = await adminService.getSuperAdminDashboard();
 

@@ -13,6 +13,8 @@ import {
 import { Logo, PageContainer } from "../../DesignSystem/designSyetem";
 
 interface RegisterFormData {
+  firstName: string;
+  lastName: string;
   nin: string;
   email: string;
   phone: string;
@@ -53,6 +55,36 @@ export function RegisterDesign({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                    className="rounded-lg"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                    className="rounded-lg"
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="nin">
                   National Identification Number (NIN)

@@ -21,6 +21,8 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
+  first_name: string;
+  last_name: string;
   nin: string;
   email: string;
   phone_number: string;
@@ -114,6 +116,8 @@ class AuthService {
 
     // API expects application/x-www-form-urlencoded
     const formData = new URLSearchParams();
+    formData.append("first_name", data.first_name);
+    formData.append("last_name", data.last_name);
     formData.append("email", data.email);
     formData.append("phone_number", data.phone_number);
     formData.append("password", data.password);
@@ -127,7 +131,7 @@ class AuthService {
         role: string;
         phone_number: string;
       }>;
-    }>(`/api/register/${role}`, formData, {
+    }>(`/register/${role}`, formData, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
@@ -158,7 +162,7 @@ class AuthService {
 
       if (accessToken && refreshToken) {
         // Real API requires both tokens in request body
-        await apiClient.post("/api/auth/logout", {
+        await apiClient.post("/auth/logout", {
           access_token: accessToken,
           refresh_token: refreshToken,
         });
@@ -168,12 +172,6 @@ class AuthService {
     } finally {
       tokenManager.clearTokens();
     }
-  }
-
-  async getCurrentUser() {
-    const response = await apiClient.get("/api/auth/me");
-    tokenManager.setUserData(response.data);
-    return response.data;
   }
 
   async refreshToken(): Promise<string> {

@@ -353,19 +353,33 @@ function DashboardTab({
             <CardDescription>Monthly revenue in Naira</CardDescription>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyRevenueData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="month" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
-                <Tooltip
-                  formatter={(value: number) =>
-                    `₦${(value / 1000000).toFixed(2)}M`
-                  }
-                />
-                <Bar dataKey="revenue" fill="#A3D9A5" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {monthlyRevenueData.length === 0 ? (
+              <div className="h-[300px] flex items-center justify-center border-2 border-dashed border-border rounded-lg">
+                <div className="text-center">
+                  <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-muted-foreground">
+                    No revenue data available yet
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Revenue data will appear as payments are processed
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyRevenueData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip
+                    formatter={(value: number) =>
+                      `₦${(value / 1000000).toFixed(2)}M`
+                    }
+                  />
+                  <Bar dataKey="revenue" fill="#A3D9A5" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -597,6 +611,29 @@ interface AuditLogTabProps {
 }
 
 function AuditLogTab({ auditLog }: AuditLogTabProps) {
+  const [selectedLog, setSelectedLog] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+
+  const handleLogClick = async (log: AuditLogEntry) => {
+    setIsDialogOpen(true);
+    setIsLoadingDetails(true);
+    setSelectedLog(null);
+
+    try {
+      const { adminService } = await import("../../services");
+      const details = await adminService.getAuditLogById(log.id);
+      console.log("Audit log details:", details);
+      setSelectedLog(details.data || details);
+    } catch (error) {
+      console.error("Failed to load audit log details:", error);
+      const { toast } = await import("sonner");
+      toast.error("Failed to load audit log details");
+    } finally {
+      setIsLoadingDetails(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2>System Audit Log</h2>
@@ -608,24 +645,140 @@ function AuditLogTab({ auditLog }: AuditLogTabProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {auditLog.map((log) => (
-              <div
-                key={log.id}
-                className="flex gap-4 pb-4 border-b border-border last:border-0"
-              >
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="text-sm">{log.action}</p>
-                  <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                    <span>{log.user}</span>
-                    <span>{log.timestamp}</span>
+            {auditLog.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No audit log entries found
+              </p>
+            ) : (
+              auditLog.map((log) => (
+                <div
+                  key={log.id}
+                  onClick={() => handleLogClick(log)}
+                  className="flex gap-4 pb-4 border-b border-border last:border-0 cursor-pointer hover:bg-secondary/50 p-3 rounded-lg transition-colors"
+                >
+                  <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">{log.action}</p>
+                    <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
+                      <span>{log.user}</span>
+                      <span>{log.timestamp}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
+
+      {/* Audit Log Details Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Audit Log Details</DialogTitle>
+            <DialogDescription>
+              Detailed information about this audit log entry
+            </DialogDescription>
+          </DialogHeader>
+
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : selectedLog ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">ID</Label>
+                  <p className="text-sm font-mono break-all">
+                    {selectedLog.id}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Action Type
+                  </Label>
+                  <p className="text-sm">
+                    <Badge variant="outline">{selectedLog.action_type}</Badge>
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Table Name
+                  </Label>
+                  <p className="text-sm">{selectedLog.table_name || "N/A"}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Record ID
+                  </Label>
+                  <p className="text-sm font-mono break-all">
+                    {selectedLog.record_id || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    User ID
+                  </Label>
+                  <p className="text-sm font-mono break-all">
+                    {selectedLog.user}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Timestamp
+                  </Label>
+                  <p className="text-sm">
+                    {selectedLog.created_at
+                      ? new Date(selectedLog.created_at).toLocaleString()
+                      : "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    IP Address
+                  </Label>
+                  <p className="text-sm">{selectedLog.ip_address || "N/A"}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    User Agent
+                  </Label>
+                  <p className="text-sm text-xs break-all">
+                    {selectedLog.user_agent || "N/A"}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">
+                  Description
+                </Label>
+                <p className="text-sm mt-1">
+                  {selectedLog.description || "No description"}
+                </p>
+              </div>
+
+              {selectedLog.changes && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">
+                    Changes
+                  </Label>
+                  <pre className="text-xs bg-secondary p-3 rounded-lg mt-1 overflow-x-auto">
+                    {typeof selectedLog.changes === "string"
+                      ? selectedLog.changes
+                      : JSON.stringify(selectedLog.changes, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No details available
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -635,8 +788,10 @@ function AddLGADialog() {
   const [availableLGAs, setAvailableLGAs] = useState<any[]>([]);
   const [selectedState, setSelectedState] = useState("");
   const [selectedLGA, setSelectedLGA] = useState("");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("TempPassword@123"); // Default temporary password
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStates, setLoadingStates] = useState(true);
 
@@ -671,7 +826,7 @@ function AddLGADialog() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedState || !selectedLGA || !fullName || !email) {
+    if (!selectedState || !selectedLGA || !firstName || !lastName || !email) {
       const { toast } = await import("sonner");
       toast.error("Please fill in all fields");
       return;
@@ -694,32 +849,70 @@ function AddLGADialog() {
       console.log("Submitting LG Admin invite:", {
         state: selectedState,
         lga: selectedLGA,
-        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
         email: email,
+        password: password,
       });
 
       const response = await adminService.createLGAdmin({
         state: selectedState,
         lga: selectedLGA,
-        full_name: fullName,
+        first_name: firstName,
+        last_name: lastName,
         email: email,
+        password: password,
       });
 
       console.log("LG Admin invite response:", response);
-      toast.success("LG Admin invited successfully!");
+      toast.success(
+        `LG Admin invited successfully! Temporary password: ${password}`,
+        { duration: 8000 }
+      );
 
       // Reset form
       setSelectedState("");
       setSelectedLGA("");
-      setFullName("");
+      setFirstName("");
+      setLastName("");
       setEmail("");
+      setPassword("TempPassword@123"); // Reset to default
     } catch (error: any) {
       const { toast } = await import("sonner");
       console.error("Failed to create LG admin - Full error:", error);
       console.error("Error response data:", error.response?.data);
       console.error("Error response status:", error.response?.status);
-      console.error("Error response headers:", error.response?.headers);
-      console.error("Error config:", error.config);
+      console.error("Error code:", error.code);
+
+      // Handle timeout errors
+      if (error.code === "ECONNABORTED") {
+        toast.error(
+          "Request timed out. The server is taking too long to respond. Please try again or contact support.",
+          { duration: 5000 }
+        );
+        return;
+      }
+
+      // Handle specific backend errors
+      if (error.response?.data) {
+        const errorData = error.response.data;
+
+        // Handle field-specific errors (like validation errors)
+        if (
+          typeof errorData === "object" &&
+          !errorData.message &&
+          !errorData.detail
+        ) {
+          const fieldErrors = Object.entries(errorData)
+            .map(([field, errors]) => {
+              const errorList = Array.isArray(errors) ? errors : [errors];
+              return `${field}: ${errorList.join(", ")}`;
+            })
+            .join("; ");
+          toast.error(`Validation errors: ${fieldErrors}`, { duration: 5000 });
+          return;
+        }
+      }
 
       // Show detailed error message
       const errorMessage =
@@ -728,9 +921,9 @@ function AddLGADialog() {
         error.response?.data?.error ||
         (error.response?.status === 403
           ? "Access forbidden. Please ensure you are logged in as a super admin and your session hasn't expired."
-          : "Failed to invite LG admin");
+          : "Failed to invite LG admin. Please check the network tab for details.");
 
-      toast.error(errorMessage);
+      toast.error(errorMessage, { duration: 5000 });
     } finally {
       setIsLoading(false);
     }
@@ -812,13 +1005,23 @@ function AddLGADialog() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-2">
-            <Label>Admin Name</Label>
-            <Input
-              placeholder="Enter full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>First Name</Label>
+              <Input
+                placeholder="John"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Last Name</Label>
+              <Input
+                placeholder="Doe"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label>Email</Label>
@@ -829,11 +1032,30 @@ function AddLGADialog() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+          <div className="space-y-2">
+            <Label>Temporary Password</Label>
+            <Input
+              type="text"
+              placeholder="TempPassword@123"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              This temporary password will be sent to the LG admin. They should
+              change it after first login.
+            </p>
+          </div>
           <Button
             className="w-full"
             onClick={handleSubmit}
             disabled={
-              isLoading || !selectedState || !selectedLGA || !fullName || !email
+              isLoading ||
+              !selectedState ||
+              !selectedLGA ||
+              !firstName ||
+              !lastName ||
+              !email ||
+              !password
             }
           >
             {isLoading ? "Creating..." : "Create Administrator"}

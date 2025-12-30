@@ -121,7 +121,8 @@ class AdminService {
   async createLGAdmin(data: {
     state: string;
     lga: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
     email: string;
   }) {
     if (USE_MOCK) {
@@ -192,7 +193,8 @@ class AdminService {
   async inviteLGAdmin(data: {
     state: string;
     lga: string;
-    full_name: string;
+    first_name: string;
+    last_name: string;
     email: string;
   }) {
     const response = await apiClient.post("/admin/super/invite-lg", data, {
