@@ -112,20 +112,22 @@ class AdminService {
       });
     }
 
-    const response = await apiClient.get(`/lgas/?${params.toString()}`);
+    const response = await apiClient.get(
+      `/admin/super/lgas?${params.toString()}`
+    );
     return response.data;
   }
 
   async createLGAdmin(data: {
     state: string;
-    localGovernment: string;
-    adminName: string;
+    lga: string;
+    full_name: string;
     email: string;
   }) {
     if (USE_MOCK) {
       return mockAdminService.createLGAdmin(data);
     }
-    const response = await apiClient.post("/lgas/", data);
+    const response = await apiClient.post("/admin/super/invite-lg", data);
     return response.data;
   }
 

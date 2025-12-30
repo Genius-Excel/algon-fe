@@ -88,52 +88,69 @@ export function ApplicationForm() {
     onUpload: (file) => setFormData({ ...formData, ninSlip: file }),
   });
 
-  // Submit step 1: Personal info and documents
-  const handleStep1Submit = async () => {
+  // Validate step 1 and move to next step (no API submission yet)
+  const handleStep1Next = () => {
     if (!validateCurrentStep()) return;
 
-    setIsSubmitting(true);
-    try {
-      const response = await applicationService.submitCertificateApplication({
-        date_of_birth: formData.dob,
-        email: formData.email,
-        full_name: formData.fullName,
-        landmark: formData.landmark,
-        local_government: formData.lga,
-        phone_number: formData.phone,
-        state: formData.state,
-        village: formData.village,
-        nin: formData.nin,
-        nin_slip: ninSlip.file || undefined,
-        profile_photo: profilePhoto.file || undefined,
-      });
+    // Validate state/LGA selection
+    const selectedState = states.find((s) => s.id === formData.state);
+    const lgasForState = selectedState?.local_governtments || [];
+    const selectedLga = lgasForState.find((l: any) => l.id === formData.lga);
 
-      setApplicationId(response.data.application_id);
-      toast.success("Application step 1 completed!");
-      setCurrentStep(2);
-    } catch (error: any) {
-      console.error("Step 1 submission error:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to submit application details";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Submit step 2: Address and additional info
-  const handleStep2Submit = async () => {
-    if (!validateCurrentStep()) return;
-
-    if (!applicationId) {
-      toast.error("Application ID missing. Please restart the application.");
+    if (!selectedState || !selectedLga) {
+      toast.error("Please select a valid State and Local Government");
       return;
     }
 
-    setIsSubmitting(true);
+    setCurrentStep(2);
+  };
+
+  // Validate step 2 and move to next step (no API submission yet)
+  const handleStep2Next = () => {
+    if (!validateCurrentStep()) return;
+    setCurrentStep(3);
+  };
+
+  // Submit application and initialize payment when clicking "Proceed to Payment"
+  const handleProceedToPayment = async () => {
+    setIsInitializingPayment(true);
+
     try {
-      const response = await applicationService.updateApplicationStep2(
-        applicationId,
+      // Step 1: Submit application with personal info and documents
+      const selectedState = states.find((s) => s.id === formData.state);
+      const lgasForState = selectedState?.local_governtments || [];
+      const selectedLga = lgasForState.find((l: any) => l.id === formData.lga);
+
+      if (!selectedState || !selectedLga) {
+        toast.error("Please select a valid State and Local Government");
+        setIsInitializingPayment(false);
+        return;
+      }
+
+      const stateName = selectedState.name;
+      const lgaName = selectedLga.name;
+
+      const step1Response =
+        await applicationService.submitCertificateApplication({
+          date_of_birth: formData.dob,
+          email: formData.email,
+          full_name: formData.fullName,
+          landmark: formData.landmark,
+          local_government: lgaName,
+          phone_number: formData.phone,
+          state: stateName,
+          village: formData.village,
+          nin: formData.nin,
+          nin_slip: ninSlip.file || undefined,
+          profile_photo: profilePhoto.file || undefined,
+        });
+
+      const appId = step1Response.data.application_id;
+      setApplicationId(appId);
+
+      // Step 2: Update application with address and additional info
+      const step2Response = await applicationService.updateApplicationStep2(
+        appId,
         {
           residential_address: formData.address,
           landmark: formData.landmark,
@@ -141,84 +158,74 @@ export function ApplicationForm() {
       );
 
       // Set the fee amount from response
-      const fee = response.data.fee.application_fee || 0;
+      const fee = step2Response.data.fee.application_fee || 0;
       setCertificateAmount(fee);
 
-      toast.success("Application step 2 completed!");
-
-      // Verify NIN information
+      // Verify NIN information (non-blocking)
       try {
-        await applicationService.verifyNIN(applicationId, "certificate");
+        await applicationService.verifyNIN(appId, "certificate");
         toast.success("NIN verified successfully!");
       } catch (ninError: any) {
-        // Non-blocking - continue even if NIN verification fails
         console.warn("NIN verification warning:", ninError);
         toast.warning(
           ninError.response?.data?.message || "NIN verification pending"
         );
       }
 
-      setCurrentStep(3);
-    } catch (error: any) {
-      console.error("Step 2 submission error:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to update application details";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Initialize payment when clicking "Proceed to Payment"
-  const handleProceedToPayment = async () => {
-    if (!applicationId) {
-      toast.error("Application ID missing. Please restart the application.");
-      return;
-    }
-
-    setIsInitializingPayment(true);
-
-    try {
+      // Step 3: Initialize payment
       const result = await applicationService.initiatePayment({
         payment_type: "certificate",
-        application_id: applicationId,
-        amount: certificateAmount > 0 ? certificateAmount : undefined,
+        application_id: appId,
+        amount: fee > 0 ? fee : undefined,
       });
 
-      if (result.data.status) {
-        setPaymentReference(result.data.data.reference);
+      if (result.status) {
+        setPaymentReference(result.data.reference);
 
-        // Open Paystack in new window
-        const paymentWindow = window.open(
-          result.data.data.authorization_url,
-          "Paystack Payment",
-          "width=500,height=700,left=200,top=100"
+        // Open Paystack payment in a new tab (more reliable than popup)
+        const paymentTab = window.open(
+          result.data.authorization_url,
+          "_blank",
+          "noopener,noreferrer"
         );
 
-        toast.success("Payment window opened! Complete payment to continue.");
+        if (!paymentTab) {
+          // If popup blocked, show error message
+          toast.error(
+            "Popup blocked! Please allow popups to complete payment.",
+            {
+              duration: 10000,
+            }
+          );
+        } else {
+          toast.success("Payment window opened! Complete payment to continue.");
+        }
 
         // Move to review step
         setCurrentStep(4);
-
-        // Optional: Poll for payment verification
-        if (paymentWindow) {
-          const pollTimer = setInterval(() => {
-            if (paymentWindow.closed) {
-              clearInterval(pollTimer);
-              toast.info(
-                "Payment window closed. Please check your application status."
-              );
-            }
-          }, 1000);
-        }
       } else {
         toast.error("Failed to initialize payment");
       }
     } catch (error: any) {
-      console.error("Payment initialization error:", error);
+      console.error("Application submission error:", error);
       const errorMessage =
-        error.response?.data?.message || "Failed to initialize payment";
-      toast.error(errorMessage);
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        "Failed to submit application";
+
+      // Handle validation errors from backend
+      if (error.response?.data?.error) {
+        const errorObj = error.response.data.error;
+        const errorMessages = Object.entries(errorObj)
+          .map(([field, messages]) => {
+            const msgArray = Array.isArray(messages) ? messages : [messages];
+            return `${field}: ${msgArray.join(", ")}`;
+          })
+          .join("; ");
+        toast.error(errorMessages);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsInitializingPayment(false);
     }
@@ -283,9 +290,9 @@ export function ApplicationForm() {
 
   const handleNext = () => {
     if (currentStep === 1) {
-      handleStep1Submit();
+      handleStep1Next();
     } else if (currentStep === 2) {
-      handleStep2Submit();
+      handleStep2Next();
     } else if (validateCurrentStep()) {
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);

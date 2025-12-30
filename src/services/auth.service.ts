@@ -42,11 +42,18 @@ class AuthService {
       role: string;
       "refresh-token": string;
       "access-token": string;
-    }>("/api/auth/login", formData, {
+    }>("/auth/login", formData, {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
       },
     });
+
+    // Map backend role format to frontend format
+    const mapRole = (backendRole: string): UserRole => {
+      if (backendRole === "super-admin") return "superAdmin";
+      if (backendRole === "admin") return "admin";
+      return "applicant";
+    };
 
     // Map API response to internal format
     const loginData: LoginResponse = {
@@ -55,7 +62,7 @@ class AuthService {
       user: {
         id: response.data.user_id,
         email: credentials.email,
-        role: response.data.role as UserRole,
+        role: mapRole(response.data.role),
         name: credentials.email.split("@")[0], // Extract name from email
       },
     };
@@ -65,7 +72,40 @@ class AuthService {
     tokenManager.setRefreshToken(loginData.refresh);
     tokenManager.setUserData(loginData.user);
 
+    // Fetch full user details from /auth/me
+    try {
+      const userInfo = await this.getCurrentUser();
+      const fullName =
+        `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim() ||
+        credentials.email.split("@")[0];
+
+      // Update user data with actual name
+      const updatedUser = {
+        ...loginData.user,
+        name: fullName,
+      };
+      tokenManager.setUserData(updatedUser);
+      loginData.user = updatedUser;
+    } catch (error) {
+      console.warn("Failed to fetch user details, using email as name:", error);
+    }
+
     return loginData;
+  }
+
+  async getCurrentUser(): Promise<{
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    phone_number: string;
+    nin: string;
+    role: string;
+    email_verified: boolean;
+    profile_image: string | null;
+  }> {
+    const response = await apiClient.get("/auth/me");
+    return response.data.data;
   }
 
   async register(data: RegisterRequest): Promise<LoginResponse> {

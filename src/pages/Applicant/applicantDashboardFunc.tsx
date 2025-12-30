@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import type { Application } from "../../Types/types";
 import { applicationService } from "../../services"; // ✅ Import service
 import { useAuth } from "../../hooks/useAuth"; // ✅ Import auth hook
+import { tokenManager } from "../../utils/tokenManager"; // ✅ Import tokenManager
 
 export function ApplicantDashboard() {
   const navigate = useNavigate();
@@ -13,6 +14,10 @@ export function ApplicantDashboard() {
   const [activeTab, setActiveTab] = useState<
     "overview" | "applications" | "certificates"
   >("overview");
+
+  // ✅ Get user name from stored data
+  const userData = tokenManager.getUserData();
+  const userName = userData?.name || "User";
 
   // ✅ State for API data
   const [applications, setApplications] = useState<Application[]>([]);

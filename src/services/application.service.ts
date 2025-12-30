@@ -109,15 +109,12 @@ interface NINVerificationResponse {
 }
 
 interface PaymentInitiationResponse {
+  status: boolean;
   message: string;
   data: {
-    status: boolean;
-    message: string;
-    data: {
-      authorization_url: string;
-      access_code: string;
-      reference: string;
-    };
+    authorization_url: string;
+    access_code: string;
+    reference: string;
   };
 }
 

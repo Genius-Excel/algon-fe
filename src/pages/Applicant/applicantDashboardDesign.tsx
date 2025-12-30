@@ -41,6 +41,7 @@ interface ApplicantDashboardDesignProps {
     approved: number;
     pending: number;
   };
+  userName: string;
   onNavigate: (page: string) => void;
   handleLogout: () => void;
   onViewDetails: (application: Application) => void;
@@ -62,6 +63,7 @@ export function ApplicantDashboardDesign({
   applications,
   currentApplication,
   stats,
+  userName,
   onNavigate,
   handleLogout,
   onViewDetails,
@@ -79,7 +81,7 @@ export function ApplicantDashboardDesign({
               <div>
                 <div className="text-foreground">LGCIVS - Applicant Portal</div>
                 <div className="text-xs text-muted-foreground">
-                  Welcome back, John Doe
+                  Welcome back, {userName}
                 </div>
               </div>
             </div>

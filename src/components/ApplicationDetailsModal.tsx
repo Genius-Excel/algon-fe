@@ -13,6 +13,7 @@ import {
   CreditCard,
   Download,
   X,
+  FileText,
 } from "lucide-react";
 import type { Application } from "../Types/types";
 
