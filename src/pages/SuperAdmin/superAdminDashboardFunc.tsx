@@ -6,7 +6,7 @@ import type {
   AuditLogEntry,
   MonthlyData,
 } from "../../Types/types";
-import { adminService } from "../../services"; // ✅ Use service
+import { adminService } from "../../services";
 import { toast } from "sonner";
 import { tokenManager } from "../../utils/tokenManager";
 
@@ -34,9 +34,21 @@ export function SuperAdminDashboard() {
 
     try {
       if (activeTab === "lgas") {
-        // Skip loading LGAs for now - endpoint not ready
-        console.log("Skipping LGAs load - endpoint not implemented yet");
-        setLgas([]);
+        // Load local governments
+        try {
+          const response = await adminService.getAllLGAs();
+          console.log("🏛️ Local governments response:", response);
+          // API returns { message: "...", data: [...] }
+          setLgas(response.data || []);
+        } catch (lgaError: any) {
+          console.error("Local governments error:", lgaError);
+          if (lgaError.response?.status === 404) {
+            console.warn("Local governments endpoint not available yet");
+            setLgas([]);
+          } else {
+            throw lgaError;
+          }
+        }
       } else if (activeTab === "audit") {
         // Load audit logs
         try {
@@ -162,8 +174,7 @@ export function SuperAdminDashboard() {
   const filteredLGAs = lgas.filter(
     (lga) =>
       lga.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lga.state.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lga.admin.toLowerCase().includes(searchTerm.toLowerCase())
+      lga.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleLogout = () => {

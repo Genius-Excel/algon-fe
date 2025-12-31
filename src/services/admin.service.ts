@@ -112,9 +112,12 @@ class AdminService {
       });
     }
 
-    const response = await apiClient.get(
-      `/admin/super/lgas?${params.toString()}`
-    );
+    const queryString = params.toString();
+    const url = queryString
+      ? `/admin/super/local-governments?${queryString}`
+      : "/admin/super/local-governments";
+
+    const response = await apiClient.get(url);
     return response.data;
   }
 

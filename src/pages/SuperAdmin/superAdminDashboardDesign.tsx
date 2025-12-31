@@ -487,8 +487,8 @@ function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
                 <TableHead>LG Name</TableHead>
                 <TableHead>State</TableHead>
                 <TableHead>Assigned Admin</TableHead>
-                <TableHead>Status</TableHead>
                 <TableHead>Certificates</TableHead>
+                <TableHead>Digitization</TableHead>
                 <TableHead>Revenue</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -497,36 +497,17 @@ function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
               {filteredLGAs.map((lga) => (
                 <TableRow key={lga.id}>
                   <TableCell>{lga.name}</TableCell>
-                  <TableCell>{lga.state}</TableCell>
-                  <TableCell>{lga.admin}</TableCell>
+                  <TableCell>{lga.state?.name || "N/A"}</TableCell>
                   <TableCell>
-                    <Badge
-                      className={
-                        lga.status === "active"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }
-                    >
-                      {lga.status}
-                    </Badge>
+                    {lga.assigned_admin?.name || "Unassigned"}
                   </TableCell>
-                  <TableCell>{lga.certificates}</TableCell>
-                  <TableCell>{lga.revenue}</TableCell>
+                  <TableCell>{lga.certificates?.certificates || 0}</TableCell>
+                  <TableCell>{lga.certificates?.digitization || 0}</TableCell>
+                  <TableCell>₦{lga.revenue?.toLocaleString() || 0}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline">
                         <Edit className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className={
-                          lga.status === "active"
-                            ? "text-red-600"
-                            : "text-green-600"
-                        }
-                      >
-                        <Power className="w-3 h-3" />
                       </Button>
                     </div>
                   </TableCell>

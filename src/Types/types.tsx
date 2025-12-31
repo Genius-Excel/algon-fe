@@ -195,15 +195,24 @@ export interface OnboardingStepProps {
 // ============================================================================
 
 export interface LocalGovernment {
-  id: number;
+  id: string;
   name: string;
-  state: string;
-  admin: string;
-  status: "active" | "inactive";
-  certificates: number;
-  revenue: string;
-  adminEmail?: string;
-  createdAt?: string;
+  state: {
+    name: string;
+    id: string;
+  };
+  assigned_admin?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  certificates: {
+    certificates: number;
+    digitization: number;
+  };
+  revenue: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DynamicField {
