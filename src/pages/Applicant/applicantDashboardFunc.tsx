@@ -51,17 +51,20 @@ export function ApplicantDashboard() {
       const transformedApplications: Application[] = applications.map(
         (app: any) => ({
           id: app.id,
-          name: app.full_name,
+          name: app.full_name || app.name,
           nin: app.nin,
-          status: app.application_status as any,
-          payment: app.payment_status,
-          dateProcessed: app.approved_at || app.updated_at,
-          dateApplied: app.created_at,
+          status: app.application_status || app.status,
+          payment: app.payment_status || app.payment,
+          dateProcessed: app.approved_at || app.dateProcessed || app.updated_at,
+          dateApplied: app.created_at || app.dateApplied,
           village: app.village,
-          lga: app.local_government.name,
-          state: app.state.name,
+          lga:
+            typeof app.local_government === "object"
+              ? app.local_government?.name
+              : app.local_government || app.lga,
+          state: typeof app.state === "object" ? app.state?.name : app.state,
           email: app.email,
-          phone: app.phone_number,
+          phone: app.phone_number || app.phone,
         })
       );
 
@@ -94,16 +97,25 @@ export function ApplicantDashboard() {
   };
 
   const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      try {
-        await logout(); // ✅ Use auth service
-        navigate("/");
-      } catch (error) {
-        console.error("Logout error:", error);
-        // Clear local data even if API call fails
-        navigate("/");
-      }
-    }
+    toast("Are you sure you want to logout?", {
+      action: {
+        label: "Logout",
+        onClick: async () => {
+          try {
+            await logout(); // ✅ Use auth service
+            navigate("/");
+          } catch (error) {
+            console.error("Logout error:", error);
+            // Clear local data even if API call fails
+            navigate("/");
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   // ✅ Show loading state

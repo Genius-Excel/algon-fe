@@ -1,7 +1,7 @@
 import apiClient from "./api";
 import { mockPaymentService } from "./mock.service";
 
-const USE_MOCK = false; // API integration enabled
+const USE_MOCK = true; // API integration enabled
 
 export interface PaymentInitializeRequest {
   email: string;

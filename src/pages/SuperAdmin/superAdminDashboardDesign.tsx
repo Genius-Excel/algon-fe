@@ -141,16 +141,6 @@ export function SuperAdminDashboardDesign({
               Local Governments
             </button>
             <button
-              onClick={() => setActiveTab("system")}
-              className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "system"
-                  ? "bg-primary text-white"
-                  : "hover:bg-secondary/20"
-              }`}
-            >
-              System Settings
-            </button>
-            <button
               onClick={() => setActiveTab("audit")}
               className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
                 activeTab === "audit"
@@ -210,8 +200,6 @@ export function SuperAdminDashboardDesign({
               setSearchTerm={setSearchTerm}
             />
           )}
-
-          {activeTab === "system" && <SystemSettingsTab />}
 
           {activeTab === "audit" && <AuditLogTab auditLog={auditLog} />}
         </div>
@@ -383,61 +371,6 @@ function DashboardTab({
           </CardContent>
         </Card>
       </div>
-
-      {/* Map Placeholder */}
-      <Card className="rounded-xl">
-        <CardHeader>
-          <CardTitle>Active Local Governments Map</CardTitle>
-          <CardDescription>
-            Geographic distribution of active LGAs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="bg-gradient-to-br from-secondary/20 to-white rounded-lg h-96 flex items-center justify-center border-2 border-dashed border-border">
-            <div className="text-center">
-              <Building2 className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Interactive Nigeria Map</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Showing 742 active LGAs across 36 states
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Top Performing LGAs */}
-      <Card className="rounded-xl">
-        <CardHeader>
-          <CardTitle>Top Performing LGAs</CardTitle>
-          <CardDescription>
-            Highest certificate issuance this month
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Rank</TableHead>
-                <TableHead>Local Government</TableHead>
-                <TableHead>State</TableHead>
-                <TableHead>Certificates</TableHead>
-                <TableHead>Revenue</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {lgas.slice(0, 5).map((lga, idx) => (
-                <TableRow key={lga.id}>
-                  <TableCell>#{idx + 1}</TableCell>
-                  <TableCell>{lga.name}</TableCell>
-                  <TableCell>{lga.state}</TableCell>
-                  <TableCell>{lga.certificates}</TableCell>
-                  <TableCell>{lga.revenue}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
     </div>
   );
 }
@@ -449,6 +382,14 @@ interface LGAsTabProps {
 }
 
 function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
+  const [selectedLGA, setSelectedLGA] = useState<LocalGovernment | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  const handleEditClick = (lga: LocalGovernment) => {
+    setSelectedLGA(lga);
+    setIsEditDialogOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between gap-4">
@@ -484,29 +425,57 @@ function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>LG Name</TableHead>
-                <TableHead>State</TableHead>
-                <TableHead>Assigned Admin</TableHead>
-                <TableHead>Certificates</TableHead>
-                <TableHead>Digitization</TableHead>
-                <TableHead>Revenue</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-center align-middle">
+                  LG Name
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  State
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Assigned Admin
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Certificates
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Digitization
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Revenue
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredLGAs.map((lga) => (
                 <TableRow key={lga.id}>
-                  <TableCell>{lga.name}</TableCell>
-                  <TableCell>{lga.state?.name || "N/A"}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
+                    {lga.name}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {lga.state?.name || "N/A"}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
                     {lga.assigned_admin?.name || "Unassigned"}
                   </TableCell>
-                  <TableCell>{lga.certificates?.certificates || 0}</TableCell>
-                  <TableCell>{lga.certificates?.digitization || 0}</TableCell>
-                  <TableCell>₦{lga.revenue?.toLocaleString() || 0}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
+                    {lga.certificates?.certificates || 0}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {lga.certificates?.digitization || 0}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    ₦{lga.revenue?.toLocaleString() || 0}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
                     <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditClick(lga)}
+                      >
                         <Edit className="w-3 h-3" />
                       </Button>
                     </div>
@@ -517,73 +486,127 @@ function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit LG Admin Dialog */}
+      <EditLGADialog
+        lga={selectedLGA}
+        isOpen={isEditDialogOpen}
+        onClose={() => {
+          setIsEditDialogOpen(false);
+          setSelectedLGA(null);
+        }}
+      />
     </div>
   );
 }
 
-function SystemSettingsTab() {
+interface EditLGADialogProps {
+  lga: LocalGovernment | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Update form when LGA changes
+  useEffect(() => {
+    if (lga && lga.assigned_admin) {
+      const nameParts = lga.assigned_admin.name.split(" ");
+      setFirstName(nameParts[0] || "");
+      setLastName(nameParts.slice(1).join(" ") || "");
+      setEmail(lga.assigned_admin.email || "");
+    } else {
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+    }
+  }, [lga]);
+
+  const handleSubmit = async () => {
+    if (!lga) return;
+
+    if (!firstName || !lastName || !email) {
+      const { toast } = await import("sonner");
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { toast } = await import("sonner");
+
+      // In mock mode, just show success
+      toast.success("LG Admin updated successfully!");
+
+      // Reset and close
+      onClose();
+    } catch (error: any) {
+      const { toast } = await import("sonner");
+      console.error("Failed to update LG admin:", error);
+      toast.error(error.response?.data?.message || "Failed to update LG admin");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      <h2>System Settings</h2>
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit LG Administrator</DialogTitle>
+          <DialogDescription>
+            Update administrator details for {lga?.name}, {lga?.state?.name}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>First Name</Label>
+              <Input
+                placeholder="Enter first name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Last Name</Label>
+              <Input
+                placeholder="Enter last name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+              />
+            </div>
+          </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card className="rounded-xl">
-          <CardHeader>
-            <CardTitle>Payment Configuration</CardTitle>
-            <CardDescription>Manage payment gateway settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Application Fee (₦)</Label>
-              <Input type="number" defaultValue="5000" />
-            </div>
-            <div className="space-y-2">
-              <Label>Processing Fee (₦)</Label>
-              <Input type="number" defaultValue="500" />
-            </div>
-            <div className="space-y-2">
-              <Label>Payment Gateway</Label>
-              <Select defaultValue="paystack">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="paystack">Paystack</SelectItem>
-                  <SelectItem value="flutterwave">Flutterwave</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button>Update Settings</Button>
-          </CardContent>
-        </Card>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              placeholder="admin@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-        <Card className="rounded-xl">
-          <CardHeader>
-            <CardTitle>Certificate Template</CardTitle>
-            <CardDescription>Configure certificate design</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Certificate Format</Label>
-              <Select defaultValue="standard">
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard Format</SelectItem>
-                  <SelectItem value="enhanced">Enhanced Format</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Validity Period (days)</Label>
-              <Input type="number" defaultValue="7" />
-            </div>
-            <Button>Save Template</Button>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button variant="outline" onClick={onClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button
+              className="!bg-green-600 hover:!bg-green-700 !text-white"
+              onClick={handleSubmit}
+              disabled={isLoading || !firstName || !lastName || !email}
+            >
+              {isLoading ? "Updating..." : "Update Admin"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -913,7 +936,7 @@ function AddLGADialog() {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="!bg-green-600 hover:!bg-green-700 !text-white">
           <UserPlus className="w-4 h-4 mr-2" />
           Add LG Admin
         </Button>
@@ -1027,7 +1050,7 @@ function AddLGADialog() {
             </p>
           </div>
           <Button
-            className="w-full"
+            className="w-full !bg-green-600 hover:!bg-green-700 !text-white"
             onClick={handleSubmit}
             disabled={
               isLoading ||

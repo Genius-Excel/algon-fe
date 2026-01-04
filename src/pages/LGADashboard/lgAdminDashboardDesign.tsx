@@ -435,24 +435,38 @@ function DashboardTab({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Application ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Action</TableHead>
+                <TableHead className="text-center align-middle">
+                  Application ID
+                </TableHead>
+                <TableHead className="text-center align-middle">Name</TableHead>
+                <TableHead className="text-center align-middle">
+                  Status
+                </TableHead>
+                <TableHead className="text-center align-middle">Date</TableHead>
+                <TableHead className="text-center align-middle">
+                  Action
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {applications.slice(0, 5).map((app) => (
                 <TableRow key={app.id}>
-                  <TableCell>{app.id}</TableCell>
-                  <TableCell>{app.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.id}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.name}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
                     <StatusBadge status={app.status} />
                   </TableCell>
-                  <TableCell>{app.dateProcessed}</TableCell>
-                  <TableCell>{app.dateApplied}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.dateProcessed}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.dateApplied}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
                     <ApplicationDialog application={app} />
                   </TableCell>
                 </TableRow>
@@ -563,55 +577,61 @@ function ApplicationsTab({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>NIN</TableHead>
-                <TableHead>Village</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-center align-middle">ID</TableHead>
+                <TableHead className="text-center align-middle">Name</TableHead>
+                <TableHead className="text-center align-middle">NIN</TableHead>
+                <TableHead className="text-center align-middle">
+                  Village
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Status
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Payment
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Date Processed
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Date Applied
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredApplications.map((app) => (
                 <TableRow key={app.id}>
-                  <TableCell>{app.id}</TableCell>
-                  <TableCell>{app.name}</TableCell>
-                  <TableCell>{app.nin}</TableCell>
-                  <TableCell>{app.village}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.id}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.name}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.nin}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.village}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
                     <StatusBadge status={app.status} />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
                     <span className="text-green-600 text-sm">
                       {app.payment}
                     </span>
                   </TableCell>
-                  <TableCell>{app.dateProcessed}</TableCell>
-                  <TableCell>{app.dateApplied}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+                  <TableCell className="text-center align-middle">
+                    {app.dateProcessed}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {app.dateApplied}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    <div className="flex gap-2 justify-center">
                       <ApplicationDialog application={app} />
-                      {app.status === "pending" ||
-                      app.status === "under-review" ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600"
-                          >
-                            <XCircle className="w-3 h-3" />
-                          </Button>
-                        </>
-                      ) : null}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -738,24 +758,42 @@ function DigitizationTab({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Request ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>NIN</TableHead>
-                <TableHead>Certificate Ref</TableHead>
-                <TableHead>Upload</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="text-center align-middle">
+                  Request ID
+                </TableHead>
+                <TableHead className="text-center align-middle">Name</TableHead>
+                <TableHead className="text-center align-middle">NIN</TableHead>
+                <TableHead className="text-center align-middle">
+                  Certificate Ref
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Upload
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Payment
+                </TableHead>
+                <TableHead className="text-center align-middle">
+                  Status
+                </TableHead>
+                <TableHead className="text-center align-middle">Date</TableHead>
+                <TableHead className="text-center align-middle">
+                  Actions
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {requests.map((req) => (
                 <TableRow key={req.id}>
-                  <TableCell>{req.id}</TableCell>
-                  <TableCell>{req.name}</TableCell>
-                  <TableCell>{req.nin}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
+                    {req.id}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {req.name}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    {req.nin}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
                     {req.certificateRef ? (
                       <span className="text-sm">{req.certificateRef}</span>
                     ) : (
@@ -764,43 +802,25 @@ function DigitizationTab({
                       </span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    <Button size="sm" variant="ghost" className="text-primary">
-                      <Eye className="w-3 h-3 mr-1" />
+                  <TableCell className="text-center align-middle">
+                    <span className="text-sm text-primary">
                       {req.uploadPreview}
-                    </Button>
+                    </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
                     <span className="text-green-600 text-sm">
                       {req.payment}
                     </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center align-middle">
                     <StatusBadge status={req.status} />
                   </TableCell>
-                  <TableCell>{req.date}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+                  <TableCell className="text-center align-middle">
+                    {req.date}
+                  </TableCell>
+                  <TableCell className="text-center align-middle">
+                    <div className="flex gap-2 justify-center">
                       <DigitizationDialog request={req} />
-                      {req.status === "pending" ||
-                      req.status === "under-review" ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-green-600"
-                          >
-                            <CheckCircle className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-red-600"
-                          >
-                            <XCircle className="w-3 h-3" />
-                          </Button>
-                        </>
-                      ) : null}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -869,12 +889,19 @@ function SettingsTab({
   handleDeleteDynamicField,
 }: SettingsTabProps) {
   const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
+  const [isEditFieldModalOpen, setIsEditFieldModalOpen] = useState(false);
+  const [editingField, setEditingField] = useState<DynamicField | null>(null);
   const [newField, setNewField] = useState({
     field_label: "",
     field_type: "text" as "text" | "number" | "date" | "file" | "dropdown",
     is_required: false,
     dropdown_options: ["Option 1", "Option 2"],
   });
+
+  const handleEditClick = (field: DynamicField) => {
+    setEditingField(field);
+    setIsEditFieldModalOpen(true);
+  };
 
   const handleSubmitNewField = () => {
     if (!newField.field_label.trim()) {
@@ -903,8 +930,8 @@ function SettingsTab({
       {/* Custom Application Fields */}
       <Card className="rounded-xl border shadow-sm">
         <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="space-y-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="space-y-1 flex-1">
               <CardTitle className="text-lg font-semibold text-gray-900">
                 Custom Application Fields
               </CardTitle>
@@ -914,7 +941,7 @@ function SettingsTab({
             </div>
             <Button
               onClick={() => setIsAddFieldModalOpen(true)}
-              className="bg-teal-600 hover:bg-teal-700 text-white"
+              className="!bg-green-600 hover:!bg-green-700 !text-white ml-auto sm:ml-0"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Field
@@ -970,6 +997,7 @@ function SettingsTab({
                           size="sm"
                           variant="ghost"
                           className="h-8 w-8 p-0"
+                          onClick={() => handleEditClick(field)}
                         >
                           <Edit className="w-3.5 h-3.5" />
                         </Button>
@@ -1003,10 +1031,15 @@ function SettingsTab({
               <p className="text-sm text-gray-500 mb-6">
                 Create custom fields to collect specific information
               </p>
-              <Button onClick={() => setIsAddFieldModalOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Add Your First Field
-              </Button>
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => setIsAddFieldModalOpen(true)}
+                  className="!bg-green-600 hover:!bg-green-700 !text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Your First Field
+                </Button>
+              </div>
             </div>
           )}
         </CardContent>
@@ -1071,17 +1104,16 @@ function SettingsTab({
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 justify-end">
             <Button
               variant="outline"
               onClick={() => setIsAddFieldModalOpen(false)}
-              className="flex-1"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmitNewField}
-              className="flex-1 bg-teal-600 hover:bg-teal-700"
+              className="!bg-green-600 hover:!bg-green-700 !text-white"
               disabled={!newField.field_label.trim()}
             >
               Add Field
@@ -1090,34 +1122,160 @@ function SettingsTab({
         </DialogContent>
       </Dialog>
 
-      {/* Application Settings */}
-      <Card className="rounded-xl">
-        <CardHeader>
-          <CardTitle>Application Settings</CardTitle>
-          <CardDescription>
-            General configuration for certificate applications
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Processing Time (Days)</Label>
-            <Input type="number" defaultValue="7" className="rounded-lg w-24" />
-          </div>
+      {/* Edit Field Modal */}
+      <Dialog
+        open={isEditFieldModalOpen}
+        onOpenChange={setIsEditFieldModalOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Custom Field</DialogTitle>
+            <DialogDescription>Update custom field details</DialogDescription>
+          </DialogHeader>
 
-          <div className="space-y-2">
-            <Label>Application Fee (₦)</Label>
-            <Input
-              type="number"
-              defaultValue="5000"
-              className="rounded-lg w-32"
-            />
-          </div>
+          {editingField && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="editFieldLabel">Field Label *</Label>
+                <Input
+                  id="editFieldLabel"
+                  placeholder="e.g., Letter from Community Head"
+                  defaultValue={editingField.field_label}
+                  className="rounded-lg"
+                />
+              </div>
 
-          <Button className="bg-teal-600 hover:bg-teal-700">
-            Save Settings
-          </Button>
-        </CardContent>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="editFieldType">Input Type *</Label>
+                <Select defaultValue={editingField.field_type}>
+                  <SelectTrigger className="rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text Input</SelectItem>
+                    <SelectItem value="number">Number</SelectItem>
+                    <SelectItem value="date">Date Picker</SelectItem>
+                    <SelectItem value="file">File Upload</SelectItem>
+                    <SelectItem value="dropdown">Dropdown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="editRequired"
+                  defaultChecked={editingField.is_required}
+                  className="rounded"
+                />
+                <Label
+                  htmlFor="editRequired"
+                  className="text-sm cursor-pointer"
+                >
+                  Mark as required field
+                </Label>
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditFieldModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    const { toast } = await import("sonner");
+                    toast.success("Field updated successfully!");
+                    setIsEditFieldModalOpen(false);
+                  }}
+                  className="!bg-green-600 hover:!bg-green-700 !text-white"
+                >
+                  Update Field
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* System Settings */}
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            System Settings
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Configure general system and certificate settings
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          <Card className="rounded-xl">
+            <CardHeader>
+              <CardTitle>Application Configuration</CardTitle>
+              <CardDescription>
+                General configuration for certificate applications
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Processing Time (Days)</Label>
+                <Input type="number" defaultValue="7" className="w-24" />
+                <p className="text-xs text-muted-foreground">
+                  Standard processing time for applications
+                </p>
+              </div>
+              <Button
+                className="!bg-green-600 hover:!bg-green-700 !text-white ml-auto block"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast.success("Settings saved successfully!");
+                }}
+              >
+                Save Settings
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-xl">
+            <CardHeader>
+              <CardTitle>Certificate Template</CardTitle>
+              <CardDescription>Configure certificate design</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Certificate Format</Label>
+                <Select defaultValue="standard">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard Format</SelectItem>
+                    <SelectItem value="enhanced">Enhanced Format</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Validity Period (days)</Label>
+                <Input type="number" defaultValue="365" />
+                <p className="text-xs text-muted-foreground">
+                  Certificate validity duration
+                </p>
+              </div>
+              <Button
+                className="!bg-green-600 hover:!bg-green-700 !text-white ml-auto block"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast.success("Template settings saved!");
+                }}
+              >
+                Save Template
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1160,16 +1318,79 @@ function ApplicationDialog({ application }: { application: Application }) {
               <StatusBadge status={application.status} />
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button className="flex-1" variant="outline">
-              <XCircle className="w-4 h-4 mr-2" />
-              Reject
-            </Button>
-            <Button className="flex-1">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Approve
-            </Button>
-          </div>
+          {application.status === "pending" && (
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast("Reject this application?", {
+                    action: {
+                      label: "Reject",
+                      onClick: () => {
+                        toast.success("Application rejected");
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Reject
+              </Button>
+              <Button
+                className="flex-1 !bg-green-600 hover:!bg-green-700 !text-white"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast("Approve this application?", {
+                    action: {
+                      label: "Approve",
+                      onClick: () => {
+                        toast.success("Application approved successfully!");
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Approve
+              </Button>
+            </div>
+          )}
+          {application.status === "approved" && (
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast("Cancel this approval?", {
+                    action: {
+                      label: "Confirm",
+                      onClick: () => {
+                        toast.success("Approval cancelled");
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -1236,16 +1457,81 @@ function DigitizationDialog({ request }: { request: DigitizationRequest }) {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button className="flex-1" variant="outline">
-              <XCircle className="w-4 h-4 mr-2" />
-              Reject Request
-            </Button>
-            <Button className="flex-1">
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Approve & Digitize
-            </Button>
-          </div>
+          {request.status === "pending" && (
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast("Reject this request?", {
+                    action: {
+                      label: "Reject",
+                      onClick: () => {
+                        toast.success("Request rejected");
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Reject Request
+              </Button>
+              <Button
+                className="flex-1 !bg-green-600 hover:!bg-green-700 !text-white"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast("Approve and digitize this request?", {
+                    action: {
+                      label: "Approve",
+                      onClick: () => {
+                        toast.success(
+                          "Request approved and digitized successfully!"
+                        );
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <CheckCircle className="w-4 h-4 mr-2" />
+                Approve & Digitize
+              </Button>
+            </div>
+          )}
+          {request.status === "approved" && (
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={async () => {
+                  const { toast } = await import("sonner");
+                  toast("Cancel this approval?", {
+                    action: {
+                      label: "Confirm",
+                      onClick: () => {
+                        toast.success("Approval cancelled");
+                      },
+                    },
+                    cancel: {
+                      label: "Cancel",
+                      onClick: () => {},
+                    },
+                  });
+                }}
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -2,7 +2,7 @@ import apiClient from "./api";
 import type { DynamicField, OnboardingFormData } from "../Types/types";
 import { mockAdminService } from "./mock.service";
 
-const USE_MOCK = false;
+const USE_MOCK = true;
 
 class AdminService {
   // Admin Onboarding
@@ -169,6 +169,10 @@ class AdminService {
     table_name?: string;
     user?: string;
   }) {
+    if (USE_MOCK) {
+      return mockAdminService.getAuditLog(params);
+    }
+
     const queryParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -188,6 +192,13 @@ class AdminService {
   }
 
   async getAuditLogById(id: string) {
+    if (USE_MOCK) {
+      // Mock service returns single audit log by filtering
+      const allLogs = await mockAdminService.getAuditLog();
+      const log = allLogs.results?.find((log: any) => log.id === id);
+      return { data: log };
+    }
+
     const response = await apiClient.get(`/admin/super/audit-log/${id}`);
     return response.data;
   }
@@ -200,6 +211,10 @@ class AdminService {
     last_name: string;
     email: string;
   }) {
+    if (USE_MOCK) {
+      return mockAdminService.createLGAdmin(data);
+    }
+
     const response = await apiClient.post("/admin/super/invite-lg", data, {
       headers: {
         "Content-Type": "application/json",
@@ -210,6 +225,10 @@ class AdminService {
 
   // Super Admin - Dashboard
   async getSuperAdminDashboard() {
+    if (USE_MOCK) {
+      return mockAdminService.getSuperAdminDashboard();
+    }
+
     const response = await apiClient.get("/admin/super/dashboard");
     return response.data;
   }
@@ -350,12 +369,20 @@ class AdminService {
 
   // LG Admin Dashboard
   async getLGAdminDashboard() {
+    if (USE_MOCK) {
+      return mockAdminService.getDashboardStats();
+    }
+
     const response = await apiClient.get("/admin/dashboard");
     return response.data;
   }
 
   // Utility - Get All States and LGs
   async getAllStatesAndLGs() {
+    if (USE_MOCK) {
+      return mockAdminService.getAllStates();
+    }
+
     // Fetch all states at once with a high limit (Nigeria has 37 states)
     const response = await apiClient.get("/all-states?limit=100");
     return response.data;

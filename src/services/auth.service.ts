@@ -1,12 +1,15 @@
 import apiClient from "./api";
 import { tokenManager } from "../utils/tokenManager";
 import type { UserRole } from "../Types/types";
+import { mockAuthService } from "./mock.service";
+
+const USE_MOCK = true; // Mock data enabled
 
 export interface LoginRequest {
   email: string;
   password: string;
 }
-                                                                                                                                                                                                                                                                                                        
+
 export interface LoginResponse {
   access: string;
   refresh: string;
@@ -32,6 +35,21 @@ export interface RegisterRequest {
 
 class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
+    // Use mock data when enabled
+    if (USE_MOCK) {
+      const mockResponse = await mockAuthService.login(
+        credentials.email,
+        credentials.password
+      );
+
+      // Store tokens and user data
+      tokenManager.setAccessToken(mockResponse.access);
+      tokenManager.setRefreshToken(mockResponse.refresh);
+      tokenManager.setUserData(mockResponse.user);
+
+      return mockResponse;
+    }
+
     // Real API call to /api/auth/login
     // API expects application/x-www-form-urlencoded
     const formData = new URLSearchParams();
@@ -106,11 +124,28 @@ class AuthService {
     email_verified: boolean;
     profile_image: string | null;
   }> {
+    // Use mock data when enabled
+    if (USE_MOCK) {
+      return await mockAuthService.getCurrentUser();
+    }
+
     const response = await apiClient.get("/auth/me");
     return response.data.data;
   }
 
   async register(data: RegisterRequest): Promise<LoginResponse> {
+    // Use mock data when enabled
+    if (USE_MOCK) {
+      const mockResponse = await mockAuthService.register(data);
+
+      // Store tokens and user data
+      tokenManager.setAccessToken(mockResponse.access);
+      tokenManager.setRefreshToken(mockResponse.refresh);
+      tokenManager.setUserData(mockResponse.user);
+
+      return mockResponse;
+    }
+
     // Determine role for endpoint - default to 'applicant'
     const role = data.role || "applicant";
 
@@ -156,6 +191,13 @@ class AuthService {
   }
 
   async logout(): Promise<void> {
+    // Use mock data when enabled
+    if (USE_MOCK) {
+      await mockAuthService.logout();
+      tokenManager.clearTokens();
+      return;
+    }
+
     try {
       const accessToken = tokenManager.getAccessToken();
       const refreshToken = tokenManager.getRefreshToken();

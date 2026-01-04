@@ -1,7 +1,7 @@
 import apiClient from "./api";
 import { mockCertificateService } from "./mock.service"; // ✅ Import correct mock
 
-const USE_MOCK = false; // API integration enabled
+const USE_MOCK = true; // API integration enabled
 
 class CertificateService {
   async downloadCertificate(id: string): Promise<Blob> {

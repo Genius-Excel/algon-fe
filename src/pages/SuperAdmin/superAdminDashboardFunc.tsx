@@ -178,9 +178,19 @@ export function SuperAdminDashboard() {
   );
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      navigate("/");
-    }
+    toast("Are you sure you want to logout?", {
+      action: {
+        label: "Logout",
+        onClick: () => {
+          tokenManager.clearTokens();
+          navigate("/");
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   // Show loading

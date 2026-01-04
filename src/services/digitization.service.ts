@@ -2,7 +2,7 @@ import apiClient from "./api";
 import type { DigitizationFormData } from "../Types/types";
 import { mockDigitizationService } from "./mock.service"; // ✅ Import correct mock
 
-const USE_MOCK = false; // API integration enabled
+const USE_MOCK = true; // API integration enabled
 
 class DigitizationService {
   async submitDigitization(

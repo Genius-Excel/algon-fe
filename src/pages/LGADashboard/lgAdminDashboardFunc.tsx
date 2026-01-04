@@ -114,14 +114,23 @@ export function LGAdminDashboard() {
   });
 
   const handleLogout = async () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      try {
-        await logout();
-        navigate("/");
-      } catch (error) {
-        navigate("/");
-      }
-    }
+    toast("Are you sure you want to logout?", {
+      action: {
+        label: "Logout",
+        onClick: async () => {
+          try {
+            await logout();
+            navigate("/");
+          } catch (error) {
+            navigate("/");
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   // ✅ Real handler for adding dynamic field
@@ -141,16 +150,29 @@ export function LGAdminDashboard() {
     fieldId: string,
     fieldLabel: string
   ) => {
-    if (window.confirm(`Are you sure you want to delete "${fieldLabel}"?`)) {
-      try {
-        await adminService.deleteDynamicField(fieldId);
-        setDynamicFields(dynamicFields.filter((field) => field.id !== fieldId));
-        toast.success(`Field "${fieldLabel}" deleted successfully`);
-      } catch (error: any) {
-        console.error("Failed to delete field:", error);
-        toast.error(error.response?.data?.message || "Failed to delete field");
-      }
-    }
+    toast(`Are you sure you want to delete "${fieldLabel}"?`, {
+      action: {
+        label: "Delete",
+        onClick: async () => {
+          try {
+            await adminService.deleteDynamicField(fieldId);
+            setDynamicFields(
+              dynamicFields.filter((field) => field.id !== fieldId)
+            );
+            toast.success(`Field "${fieldLabel}" deleted successfully`);
+          } catch (error: any) {
+            console.error("Failed to delete field:", error);
+            toast.error(
+              error.response?.data?.message || "Failed to delete field"
+            );
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   // ✅ Export applications as CSV

@@ -1,11 +1,11 @@
-import type { 
-  Application, 
-  DigitizationRequest, 
+import type {
+  Application,
+  DigitizationRequest,
   DynamicField,
   LocalGovernment,
   AuditLogEntry,
-  MonthlyData 
-} from '../Types/types';
+  MonthlyData,
+} from "../Types/types";
 
 // ============================================================================
 // MOCK APPLICATIONS
@@ -24,7 +24,7 @@ export const mockApplications: Application[] = [
     lga: "Ikeja",
     state: "Lagos",
     email: "john.doe@example.com",
-    phone: "08012345678"
+    phone: "08012345678",
   },
   {
     id: "APP-2025-002",
@@ -38,7 +38,7 @@ export const mockApplications: Application[] = [
     lga: "Ikeja",
     state: "Lagos",
     email: "amina.bello@example.com",
-    phone: "08098765432"
+    phone: "08098765432",
   },
   {
     id: "APP-2025-003",
@@ -52,7 +52,7 @@ export const mockApplications: Application[] = [
     lga: "Ikeja",
     state: "Lagos",
     email: "emeka.okafor@example.com",
-    phone: "08055566777"
+    phone: "08055566777",
   },
   {
     id: "APP-2025-004",
@@ -66,7 +66,7 @@ export const mockApplications: Application[] = [
     lga: "Ikeja",
     state: "Lagos",
     email: "fatima.hassan@example.com",
-    phone: "08011122233"
+    phone: "08011122233",
   },
   {
     id: "APP-2025-005",
@@ -80,7 +80,7 @@ export const mockApplications: Application[] = [
     lga: "Ikeja",
     state: "Lagos",
     email: "seun.williams@example.com",
-    phone: "08022233344"
+    phone: "08022233344",
   },
   {
     id: "APP-2025-006",
@@ -94,7 +94,7 @@ export const mockApplications: Application[] = [
     lga: "Lagos Island",
     state: "Lagos",
     email: "grace.nwankwo@example.com",
-    phone: "08077788899"
+    phone: "08077788899",
   },
   {
     id: "APP-2025-007",
@@ -108,7 +108,7 @@ export const mockApplications: Application[] = [
     lga: "Eti-Osa",
     state: "Lagos",
     email: "ibrahim.yusuf@example.com",
-    phone: "08044455566"
+    phone: "08044455566",
   },
   {
     id: "APP-2025-008",
@@ -122,7 +122,7 @@ export const mockApplications: Application[] = [
     lga: "Eti-Osa",
     state: "Lagos",
     email: "blessing.okonkwo@example.com",
-    phone: "08033366699"
+    phone: "08033366699",
   },
 ];
 
@@ -139,7 +139,7 @@ export const mockDigitizationRequests: DigitizationRequest[] = [
     payment: "Paid",
     date: "2025-10-20",
     certificateRef: "CERT-IKJ-2018-123",
-    uploadPreview: "certificate_scan.pdf"
+    uploadPreview: "certificate_scan.pdf",
   },
   {
     id: "DIGI-2025-002",
@@ -149,7 +149,7 @@ export const mockDigitizationRequests: DigitizationRequest[] = [
     payment: "Paid",
     date: "2025-10-19",
     certificateRef: "",
-    uploadPreview: "old_cert.jpg"
+    uploadPreview: "old_cert.jpg",
   },
   {
     id: "DIGI-2025-003",
@@ -159,7 +159,7 @@ export const mockDigitizationRequests: DigitizationRequest[] = [
     payment: "Paid",
     date: "2025-10-16",
     certificateRef: "CERT-IKJ-2015-078",
-    uploadPreview: "certificate.pdf"
+    uploadPreview: "certificate.pdf",
   },
   {
     id: "DIGI-2025-004",
@@ -169,7 +169,7 @@ export const mockDigitizationRequests: DigitizationRequest[] = [
     payment: "Paid",
     date: "2025-10-18",
     certificateRef: "CERT-IKJ-2019-234",
-    uploadPreview: "cert_copy.pdf"
+    uploadPreview: "cert_copy.pdf",
   },
 ];
 
@@ -178,29 +178,29 @@ export const mockDigitizationRequests: DigitizationRequest[] = [
 // ============================================================================
 
 export const mockDynamicFields: DynamicField[] = [
-  { 
-    id: "1", 
-    field_label: "Letter from Traditional Ruler", 
-    field_type: "file", 
-    is_required: true 
+  {
+    id: "1",
+    field_label: "Letter from Traditional Ruler",
+    field_type: "file",
+    is_required: true,
   },
-  { 
-    id: "2", 
-    field_label: "Proof of Residence", 
-    field_type: "file", 
-    is_required: true 
+  {
+    id: "2",
+    field_label: "Proof of Residence",
+    field_type: "file",
+    is_required: true,
   },
-  { 
-    id: "3", 
-    field_label: "Community Leader Endorsement", 
-    field_type: "text", 
-    is_required: false 
+  {
+    id: "3",
+    field_label: "Community Leader Endorsement",
+    field_type: "text",
+    is_required: false,
   },
-  { 
-    id: "4", 
-    field_label: "Years of Residence", 
-    field_type: "number", 
-    is_required: true 
+  {
+    id: "4",
+    field_label: "Years of Residence",
+    field_type: "number",
+    is_required: true,
   },
 ];
 
@@ -209,28 +209,28 @@ export const mockDynamicFields: DynamicField[] = [
 // ============================================================================
 
 export const mockWeeklyData = [
-  { name: 'Mon', value: 12 },
-  { name: 'Tue', value: 19 },
-  { name: 'Wed', value: 15 },
-  { name: 'Thu', value: 22 },
-  { name: 'Fri', value: 18 },
-  { name: 'Sat', value: 8 },
-  { name: 'Sun', value: 5 }
+  { name: "Mon", value: 12 },
+  { name: "Tue", value: 19 },
+  { name: "Wed", value: 15 },
+  { name: "Thu", value: 22 },
+  { name: "Fri", value: 18 },
+  { name: "Sat", value: 8 },
+  { name: "Sun", value: 5 },
 ];
 
 export const mockApprovalData = [
-  { name: 'Approved', value: 145, color: '#10b981' },
-  { name: 'Pending', value: 23, color: '#f59e0b' },
-  { name: 'Rejected', value: 12, color: '#ef4444' }
+  { name: "Approved", value: 145, color: "#10b981" },
+  { name: "Pending", value: 23, color: "#f59e0b" },
+  { name: "Rejected", value: 12, color: "#ef4444" },
 ];
 
 export const mockMonthlyData: MonthlyData[] = [
-  { month: 'Jan', applications: 1240, revenue: 6820000 },
-  { month: 'Feb', applications: 1580, revenue: 8690000 },
-  { month: 'Mar', applications: 1320, revenue: 7260000 },
-  { month: 'Apr', applications: 1690, revenue: 9295000 },
-  { month: 'May', applications: 1950, revenue: 10725000 },
-  { month: 'Jun', applications: 2100, revenue: 11550000 },
+  { month: "Jan", applications: 1240, revenue: 6820000 },
+  { month: "Feb", applications: 1580, revenue: 8690000 },
+  { month: "Mar", applications: 1320, revenue: 7260000 },
+  { month: "Apr", applications: 1690, revenue: 9295000 },
+  { month: "May", applications: 1950, revenue: 10725000 },
+  { month: "Jun", applications: 2100, revenue: 11550000 },
 ];
 
 // ============================================================================
@@ -238,71 +238,285 @@ export const mockMonthlyData: MonthlyData[] = [
 // ============================================================================
 
 export const mockLocalGovernments: LocalGovernment[] = [
-  { 
-    id: 1, 
-    name: "Ikeja", 
-    state: "Lagos", 
-    admin: "Adeola Johnson", 
-    status: "active", 
-    certificates: 145, 
-    revenue: "₦797,500",
-    adminEmail: "adeola.johnson@ikeja.gov.ng",
-    createdAt: "2024-01-15"
+  {
+    id: "1",
+    name: "Ikeja",
+    state: { name: "Lagos", id: "LA" },
+    assigned_admin: {
+      id: "admin-1",
+      name: "Adeola Johnson",
+      email: "adeola.johnson@ikeja.gov.ng"
+    },
+    certificates: { certificates: 145, digitization: 23 },
+    revenue: 797500,
+    created_at: "2024-01-15T00:00:00Z",
+    updated_at: "2024-01-15T00:00:00Z"
   },
-  { 
-    id: 2, 
-    name: "Lagos Island", 
-    state: "Lagos", 
-    admin: "Chioma Nwankwo", 
-    status: "active", 
-    certificates: 198, 
-    revenue: "₦1,089,000",
-    adminEmail: "chioma.nwankwo@lagosisland.gov.ng",
-    createdAt: "2024-01-20"
+  {
+    id: "2",
+    name: "Lagos Island",
+    state: { name: "Lagos", id: "LA" },
+    assigned_admin: {
+      id: "admin-2",
+      name: "Chioma Nwankwo",
+      email: "chioma.nwankwo@lagosisland.gov.ng"
+    },
+    certificates: { certificates: 198, digitization: 31 },
+    revenue: 1089000,
+    created_at: "2024-01-20T00:00:00Z",
+    updated_at: "2024-01-20T00:00:00Z"
   },
-  { 
-    id: 3, 
-    name: "Surulere", 
-    state: "Lagos", 
-    admin: "Ibrahim Musa", 
-    status: "active", 
-    certificates: 132, 
-    revenue: "₦726,000",
-    adminEmail: "ibrahim.musa@surulere.gov.ng",
-    createdAt: "2024-02-10"
+  {
+    id: "3",
+    name: "Surulere",
+    state: { name: "Lagos", id: "LA" },
+    assigned_admin: {
+      id: "admin-3",
+      name: "Ibrahim Musa",
+      email: "ibrahim.musa@surulere.gov.ng"
+    },
+    certificates: { certificates: 132, digitization: 18 },
+    revenue: 726000,
+    created_at: "2024-02-10T00:00:00Z",
+    updated_at: "2024-02-10T00:00:00Z"
   },
-  { 
-    id: 4, 
-    name: "Kano Municipal", 
-    state: "Kano", 
-    admin: "Fatima Hassan", 
-    status: "active", 
-    certificates: 256, 
-    revenue: "₦1,408,000",
-    adminEmail: "fatima.hassan@kanomunicipal.gov.ng",
-    createdAt: "2024-02-15"
+  {
+    id: "4",
+    name: "Kano Municipal",
+    state: { name: "Kano", id: "KN" },
+    assigned_admin: {
+      id: "admin-4",
+      name: "Fatima Hassan",
+      email: "fatima.hassan@kanomunicipal.gov.ng"
+    },
+    certificates: { certificates: 256, digitization: 42 },
+    revenue: 1408000,
+    created_at: "2024-02-15T00:00:00Z",
+    updated_at: "2024-02-15T00:00:00Z"
   },
-  { 
-    id: 5, 
-    name: "Port Harcourt", 
-    state: "Rivers", 
-    admin: "Emmanuel Okon", 
-    status: "active", 
-    certificates: 189, 
-    revenue: "₦1,039,500",
-    adminEmail: "emmanuel.okon@portharcourt.gov.ng",
-    createdAt: "2024-03-01"
+  {
+    id: "5",
+    name: "Port Harcourt",
+    state: { name: "Rivers", id: "RI" },
+    assigned_admin: {
+      id: "admin-5",
+      name: "Emmanuel Okon",
+      email: "emmanuel.okon@portharcourt.gov.ng"
+    },
+    certificates: { certificates: 189, digitization: 27 },
+    revenue: 1039500,
+    created_at: "2024-03-01T00:00:00Z",
+    updated_at: "2024-03-01T00:00:00Z"
   },
-  { 
-    id: 6, 
-    name: "Kaduna North", 
-    state: "Kaduna", 
-    admin: "Aisha Bello", 
-    status: "inactive", 
-    certificates: 0, 
-    revenue: "₦0",
-    adminEmail: "aisha.bello@kadunanorth.gov.ng",
-    createdAt: "2024-03-20"
+  {
+    id: "6",
+    name: "Kaduna North",
+    state: { name: "Kaduna", id: "KD" },
+    assigned_admin: {
+      id: "admin-6",
+      name: "Aisha Bello",
+      email: "aisha.bello@kadunanorth.gov.ng"
+    },
+    certificates: { certificates: 0, digitization: 0 },
+    revenue: 0,
+    created_at: "2024-03-20T00:00:00Z",
+    updated_at: "2024-03-20T00:00:00Z"
+  },
+  {
+    id: "7",
+    name: "Eti-Osa",
+    state: { name: "Lagos", id: "LA" },
+    assigned_admin: {
+      id: "admin-7",
+      name: "Tunde Adeyemi",
+      email: "tunde.adeyemi@etiosa.gov.ng"
+    },
+    certificates: { certificates: 178, digitization: 25 },
+    revenue: 979000,
+    created_at: "2024-04-05T00:00:00Z",
+    updated_at: "2024-04-05T00:00:00Z"
+  },
+  {
+    id: "8",
+    name: "Alimosho",
+    state: { name: "Lagos", id: "LA" },
+    assigned_admin: {
+      id: "admin-8",
+      name: "Grace Okafor",
+      email: "grace.okafor@alimosho.gov.ng"
+    },
+    certificates: { certificates: 312, digitization: 48 },
+    revenue: 1716000,
+    created_at: "2024-04-12T00:00:00Z",
+    updated_at: "2024-04-12T00:00:00Z"
+  },
+  {
+    id: "9",
+    name: "Gwagwalada",
+    state: { name: "FCT", id: "FC" },
+    assigned_admin: {
+      id: "admin-9",
+      name: "Mohammed Yusuf",
+      email: "mohammed.yusuf@gwagwalada.gov.ng"
+    },
+    certificates: { certificates: 95, digitization: 14 },
+    revenue: 522500,
+    created_at: "2024-05-01T00:00:00Z",
+    updated_at: "2024-05-01T00:00:00Z"
+  },
+  {
+    id: "10",
+    name: "Abuja Municipal",
+    state: { name: "FCT", id: "FC" },
+    assigned_admin: {
+      id: "admin-10",
+      name: "Patricia Eze",
+      email: "patricia.eze@abujamunicipal.gov.ng"
+    },
+    certificates: { certificates: 267, digitization: 39 },
+    revenue: 1468500,
+    created_at: "2024-05-10T00:00:00Z",
+    updated_at: "2024-05-10T00:00:00Z"
+  },
+  {
+    id: "11",
+    name: "Ibadan North",
+    state: { name: "Oyo", id: "OY" },
+    assigned_admin: {
+      id: "admin-11",
+      name: "Oluwaseun Ajayi",
+      email: "oluwaseun.ajayi@ibadannorth.gov.ng"
+    },
+    certificates: { certificates: 156, digitization: 22 },
+    revenue: 858000,
+    created_at: "2024-06-01T00:00:00Z",
+    updated_at: "2024-06-01T00:00:00Z"
+  },
+  {
+    id: "12",
+    name: "Enugu North",
+    state: { name: "Enugu", id: "EN" },
+    assigned_admin: {
+      id: "admin-12",
+      name: "Chinedu Okonkwo",
+      email: "chinedu.okonkwo@enugunorth.gov.ng"
+    },
+    certificates: { certificates: 124, digitization: 17 },
+    revenue: 682000,
+    created_at: "2024-06-15T00:00:00Z",
+    updated_at: "2024-06-15T00:00:00Z"
+  },
+  {
+    id: "13",
+    name: "Aba North",
+    state: { name: "Abia", id: "AB" },
+    assigned_admin: {
+      id: "admin-13",
+      name: "Ngozi Obi",
+      email: "ngozi.obi@abanorth.gov.ng"
+    },
+    certificates: { certificates: 143, digitization: 20 },
+    revenue: 786500,
+    created_at: "2024-07-01T00:00:00Z",
+    updated_at: "2024-07-01T00:00:00Z"
+  },
+  {
+    id: "14",
+    name: "Benin City",
+    state: { name: "Edo", id: "ED" },
+    assigned_admin: {
+      id: "admin-14",
+      name: "Osaze Omoregie",
+      email: "osaze.omoregie@benincity.gov.ng"
+    },
+    certificates: { certificates: 201, digitization: 29 },
+    revenue: 1105500,
+    created_at: "2024-07-20T00:00:00Z",
+    updated_at: "2024-07-20T00:00:00Z"
+  },
+  {
+    id: "15",
+    name: "Jos North",
+    state: { name: "Plateau", id: "PL" },
+    assigned_admin: {
+      id: "admin-15",
+      name: "Daniel Pwajok",
+      email: "daniel.pwajok@josnorth.gov.ng"
+    },
+    certificates: { certificates: 87, digitization: 12 },
+    revenue: 478500,
+    created_at: "2024-08-01T00:00:00Z",
+    updated_at: "2024-08-01T00:00:00Z"
+  },
+  {
+    id: "16",
+    name: "Maiduguri",
+    state: { name: "Borno", id: "BO" },
+    assigned_admin: {
+      id: "admin-16",
+      name: "Zainab Ali",
+      email: "zainab.ali@maiduguri.gov.ng"
+    },
+    certificates: { certificates: 0, digitization: 0 },
+    revenue: 0,
+    created_at: "2024-08-15T00:00:00Z",
+    updated_at: "2024-08-15T00:00:00Z"
+  },
+  {
+    id: "17",
+    name: "Calabar Municipal",
+    state: { name: "Cross River", id: "CR" },
+    assigned_admin: {
+      id: "admin-17",
+      name: "Ekaette Bassey",
+      email: "ekaette.bassey@calabar.gov.ng"
+    },
+    certificates: { certificates: 112, digitization: 16 },
+    revenue: 616000,
+    created_at: "2024-09-01T00:00:00Z",
+    updated_at: "2024-09-01T00:00:00Z"
+  },
+  {
+    id: "18",
+    name: "Ilorin West",
+    state: { name: "Kwara", id: "KW" },
+    assigned_admin: {
+      id: "admin-18",
+      name: "Abdullahi Rahman",
+      email: "abdullahi.rahman@ilorinwest.gov.ng"
+    },
+    certificates: { certificates: 134, digitization: 19 },
+    revenue: 737000,
+    created_at: "2024-09-15T00:00:00Z",
+    updated_at: "2024-09-15T00:00:00Z"
+  },
+  {
+    id: "19",
+    name: "Sokoto North",
+    state: { name: "Sokoto", id: "SO" },
+    assigned_admin: {
+      id: "admin-19",
+      name: "Hauwa Usman",
+      email: "hauwa.usman@sokotonorth.gov.ng"
+    },
+    certificates: { certificates: 98, digitization: 13 },
+    revenue: 539000,
+    created_at: "2024-10-01T00:00:00Z",
+    updated_at: "2024-10-01T00:00:00Z"
+  },
+  {
+    id: "20",
+    name: "Bauchi",
+    state: { name: "Bauchi", id: "BA" },
+    assigned_admin: {
+      id: "admin-20",
+      name: "Yakubu Ibrahim",
+      email: "yakubu.ibrahim@bauchi.gov.ng"
+    },
+    certificates: { certificates: 0, digitization: 0 },
+    revenue: 0,
+    created_at: "2024-10-15T00:00:00Z",
+    updated_at: "2024-10-15T00:00:00Z"
   },
 ];
 
@@ -311,47 +525,47 @@ export const mockLocalGovernments: LocalGovernment[] = [
 // ============================================================================
 
 export const mockAuditLog: AuditLogEntry[] = [
-  { 
-    id: 1, 
-    action: "LG Admin approved 12 certificates", 
-    user: "Adeola Johnson (Ikeja)", 
+  {
+    id: 1,
+    action: "LG Admin approved 12 certificates",
+    user: "Adeola Johnson (Ikeja)",
     timestamp: "2025-10-20 14:30",
-    details: "Bulk approval of applications"
+    details: "Bulk approval of applications",
   },
-  { 
-    id: 2, 
-    action: "New LGA added to system", 
-    user: "System Admin", 
+  {
+    id: 2,
+    action: "New LGA added to system",
+    user: "System Admin",
     timestamp: "2025-10-20 12:15",
-    details: "Kaduna North LGA onboarded"
+    details: "Kaduna North LGA onboarded",
   },
-  { 
-    id: 3, 
-    action: "Payment configuration updated", 
-    user: "Super Admin", 
+  {
+    id: 3,
+    action: "Payment configuration updated",
+    user: "Super Admin",
     timestamp: "2025-10-19 16:45",
-    details: "Application fee changed from ₦4,500 to ₦5,000"
+    details: "Application fee changed from ₦4,500 to ₦5,000",
   },
-  { 
-    id: 4, 
-    action: "LG Admin rejected 3 applications", 
-    user: "Chioma Nwankwo (Lagos Island)", 
+  {
+    id: 4,
+    action: "LG Admin rejected 3 applications",
+    user: "Chioma Nwankwo (Lagos Island)",
     timestamp: "2025-10-19 10:20",
-    details: "Insufficient documentation"
+    details: "Insufficient documentation",
   },
-  { 
-    id: 5, 
-    action: "System backup completed", 
-    user: "System", 
+  {
+    id: 5,
+    action: "System backup completed",
+    user: "System",
     timestamp: "2025-10-19 03:00",
-    details: "Automated daily backup"
+    details: "Automated daily backup",
   },
-  { 
-    id: 6, 
-    action: "Dynamic field added", 
-    user: "Ibrahim Musa (Surulere)", 
+  {
+    id: 6,
+    action: "Dynamic field added",
+    user: "Ibrahim Musa (Surulere)",
     timestamp: "2025-10-18 15:30",
-    details: "Added 'Community Leader Recommendation' field"
+    details: "Added 'Community Leader Recommendation' field",
   },
 ];
 
@@ -366,7 +580,7 @@ export const mockUsers = {
     role: "applicant" as const,
     name: "John Doe",
     phone: "08012345678",
-    nin: "12345678901"
+    nin: "12345678901",
   },
   lgAdmin: {
     id: "admin-001",
@@ -381,7 +595,7 @@ export const mockUsers = {
     role: "super-admin" as const,
     name: "System Administrator",
     phone: "08011112222",
-  }
+  },
 };
 
 // ============================================================================
@@ -396,7 +610,7 @@ export const mockCertificateData = {
   issueDate: "October 15, 2025",
   status: "Active",
   nin: "12345678901",
-  expiryDate: "October 15, 2032"
+  expiryDate: "October 15, 2032",
 };
 
 // ============================================================================
@@ -406,100 +620,100 @@ export const mockCertificateData = {
 export const mockAuthService = {
   async login(credentials: any) {
     await delay(1000);
-    
+
     const email = credentials.email.toLowerCase();
-    
+
     // Determine role based on email
-    let role: 'applicant' | 'lg_admin' | 'super_admin' = 'applicant';
+    let role: "applicant" | "lg_admin" | "super_admin" = "applicant";
     let user: any;
-    
+
     // ✅ Check for super admin first (most specific)
-    if (email.includes('superadmin')) {
-      role = 'super_admin';
+    if (email.includes("superadmin")) {
+      role = "super_admin";
       user = {
         id: 3,
         email: email,
-        firstName: 'Super',
-        lastName: 'Admin',
-        role: 'super_admin',
+        firstName: "Super",
+        lastName: "Admin",
+        role: "super_admin",
       };
     }
     // ✅ Then check for LG admin
-    else if (email.includes('admin')) {
-      role = 'lg_admin';
+    else if (email.includes("admin")) {
+      role = "lg_admin";
       user = {
         id: 2,
         email: email,
-        firstName: 'LG',
-        lastName: 'Admin',
-        role: 'lg_admin',
-        lg: 'Ikeja',
+        firstName: "LG",
+        lastName: "Admin",
+        role: "lg_admin",
+        lg: "Ikeja",
       };
     }
     // ✅ Default to applicant
     else {
-      role = 'applicant';
+      role = "applicant";
       user = {
         id: 1,
         email: email,
-        firstName: 'John',
-        lastName: 'Doe',
-        role: 'applicant',
+        firstName: "John",
+        lastName: "Doe",
+        role: "applicant",
       };
     }
-    
-    console.log('Mock Login:', { email, role, user });
-    
+
+    console.log("Mock Login:", { email, role, user });
+
     return {
-      access: 'mock_access_token_' + Date.now(),
-      refresh: 'mock_refresh_token_' + Date.now(),
+      access: "mock_access_token_" + Date.now(),
+      refresh: "mock_refresh_token_" + Date.now(),
       user: user,
     };
   },
 
   async register(data: any) {
     await delay(1000);
-    
+
     return {
-      access: 'mock_access_token_' + Date.now(),
-      refresh: 'mock_refresh_token_' + Date.now(),
+      access: "mock_access_token_" + Date.now(),
+      refresh: "mock_refresh_token_" + Date.now(),
       user: {
         id: Date.now(),
         email: data.email,
         firstName: data.firstName,
         lastName: data.lastName,
-        role: 'applicant',
+        role: "applicant",
       },
     };
   },
 
   async refreshToken(refresh: string) {
     await delay(500);
-    
+
     return {
-      access: 'mock_access_token_' + Date.now(),
+      access: "mock_access_token_" + Date.now(),
     };
   },
 
   async logout() {
     await delay(300);
-    return { message: 'Logged out successfully' };
+    return { message: "Logged out successfully" };
   },
 
   async getCurrentUser() {
     await delay(300);
-    
+
     // Return a default applicant user
     return {
       id: 1,
-      email: 'user@example.com',
-      firstName: 'John',
-      lastName: 'Doe',
-      role: 'applicant',
+      email: "user@example.com",
+      firstName: "John",
+      lastName: "Doe",
+      role: "applicant",
     };
   },
 };
 
 function delay(arg0: number) {
-  throw new Error('Function not implemented.');
+  throw new Error("Function not implemented.");
 }

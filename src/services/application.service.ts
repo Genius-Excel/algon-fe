@@ -2,7 +2,7 @@ import apiClient from "./api";
 import type { Application, ApplicationFormData } from "../Types/types";
 import { mockApplicationService } from "./mock.service";
 
-const USE_MOCK = false; // API integration enabled
+const USE_MOCK = true; // API integration enabled
 
 // API Response types based on documentation
 interface CertificateApplicationResponse {
@@ -133,6 +133,10 @@ class ApplicationService {
     nin_slip?: File;
     profile_photo?: File;
   }): Promise<CertificateApplicationResponse> {
+    if (USE_MOCK) {
+      return mockApplicationService.submitApplication(data);
+    }
+
     const formData = new FormData();
 
     // Add text fields
@@ -180,6 +184,24 @@ class ApplicationService {
       [key: string]: any; // For dynamic file fields
     }
   ): Promise<ApplicationStep2Response> {
+    if (USE_MOCK) {
+      return {
+        message: "Application updated successfully",
+        data: {
+          fee: {
+            application_fee: 5000,
+            digitization_fee: 3000,
+            regeneration_fee: 2000,
+            currency: "NGN",
+            local_government: null,
+            last_updated_by: null,
+          },
+          verification_fee: 1000,
+          application_id: applicationId,
+        },
+      };
+    }
+
     const formData = new FormData();
 
     formData.append("residential_address", data.residential_address);
@@ -226,6 +248,39 @@ class ApplicationService {
     nin_slip?: File;
     uploaded_certificate?: File;
   }): Promise<DigitizationApplicationResponse> {
+    if (USE_MOCK) {
+      return {
+        message: "Digitization application submitted successfully",
+        data: {
+          user_data: {
+            id: "dig-" + Date.now(),
+            email: data.email,
+            phone_number: data.phone_number,
+            state: data.state,
+            local_government: data.local_government,
+            certificate_reference_number: data.certificate_reference_number,
+            nin: data.nin,
+            full_name: data.full_name,
+            payment_status: "pending",
+            verification_status: "pending",
+            reviewed_at: null,
+            remarks: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            reviewed_by: null,
+          },
+          fee: {
+            application_fee: null,
+            digitization_fee: 3000,
+            regeneration_fee: null,
+            currency: "NGN",
+            local_government: null,
+            last_updated_by: null,
+          },
+        },
+      };
+    }
+
     const formData = new FormData();
 
     formData.append("nin", data.nin);
@@ -267,6 +322,14 @@ class ApplicationService {
     limit?: number;
     offset?: number;
   }): Promise<MyApplicationsResponse> {
+    if (USE_MOCK) {
+      const mockData = await mockApplicationService.getMyApplications();
+      return {
+        message: "Applications retrieved successfully",
+        data: mockData,
+      };
+    }
+
     const queryParams = new URLSearchParams();
     if (params?.application_type) {
       queryParams.append("application_type", params.application_type);
@@ -292,6 +355,12 @@ class ApplicationService {
     applicationId: string,
     type: "certificate" | "digitization"
   ): Promise<NINVerificationResponse> {
+    if (USE_MOCK) {
+      return {
+        message: "NIN verification successful",
+      };
+    }
+
     const response = await apiClient.get<NINVerificationResponse>(
       `/verify-nin/${applicationId}?type=${type}`
     );
@@ -304,6 +373,19 @@ class ApplicationService {
     application_id: string;
     amount?: number;
   }): Promise<PaymentInitiationResponse> {
+    if (USE_MOCK) {
+      return {
+        status: true,
+        message: "Payment initiated successfully",
+        data: {
+          authorization_url:
+            "https://mock-payment-gateway.com/pay/" + data.application_id,
+          access_code: "mock_access_" + Date.now(),
+          reference: "mock_ref_" + Date.now(),
+        },
+      };
+    }
+
     const response = await apiClient.post<PaymentInitiationResponse>(
       "/certificate/initiate-payment",
       data,
