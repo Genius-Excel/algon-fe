@@ -1,14 +1,40 @@
 // src/pages/AdminOnboarding/AdminOnboardingDesign.tsx
-import React from 'react';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { Checkbox } from '../../components/ui/checkbox';
-import { UserCheck, Settings, Shield, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Logo, StepProgress, PageContainer } from '../../DesignSystem/designSyetem';
-import type { OnboardingFormData, OnboardingStepProps } from '../../Types/types';
+import React from "react";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Checkbox } from "../../components/ui/checkbox";
+import {
+  UserCheck,
+  Settings,
+  Shield,
+  CheckCircle,
+  ArrowLeft,
+  ArrowRight,
+} from "lucide-react";
+import {
+  Logo,
+  StepProgress,
+  PageContainer,
+} from "../../DesignSystem/designSyetem";
+import type {
+  OnboardingFormData,
+  OnboardingStepProps,
+} from "../../Types/types";
 
 // Main Design Component
 interface AdminOnboardingDesignProps {
@@ -34,9 +60,9 @@ export function AdminOnboardingDesign({
   handleBack,
   handleSubmit,
   isSubmitting,
-  onCancel
+  onCancel,
 }: AdminOnboardingDesignProps) {
-  const steps = ['Personal Info', 'LG Assignment', 'Permissions'];
+  const steps = ["Personal Info", "LG Assignment", "Permissions"];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-white py-8 px-4">
@@ -52,7 +78,7 @@ export function AdminOnboardingDesign({
         </div>
 
         {/* Progress Bar */}
-        <StepProgress 
+        <StepProgress
           currentStep={currentStep}
           totalSteps={totalSteps}
           steps={steps}
@@ -64,7 +90,10 @@ export function AdminOnboardingDesign({
             <PersonalInfoStep formData={formData} setFormData={setFormData} />
           )}
           {currentStep === 2 && (
-            <LocalGovernmentStep formData={formData} setFormData={setFormData} />
+            <LocalGovernmentStep
+              formData={formData}
+              setFormData={setFormData}
+            />
           )}
           {currentStep === 3 && (
             <PermissionsStep formData={formData} setFormData={setFormData} />
@@ -74,8 +103,8 @@ export function AdminOnboardingDesign({
           <CardContent className="pt-0">
             <div className="flex gap-4 justify-between">
               {currentStep > 1 && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleBack}
                   className="rounded-lg"
                   disabled={isSubmitting}
@@ -85,18 +114,18 @@ export function AdminOnboardingDesign({
                 </Button>
               )}
               {currentStep < totalSteps ? (
-                <Button 
+                <Button
                   onClick={handleNext}
-                  className="ml-auto rounded-lg bg-teal-600 hover:bg-teal-700"
+                  className="ml-auto rounded-lg bg-green-600 hover:bg-green-700"
                   disabled={isSubmitting}
                 >
                   Next
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               ) : (
-                <Button 
+                <Button
                   onClick={handleSubmit}
-                  className="ml-auto rounded-lg bg-teal-600 hover:bg-teal-700"
+                  className="ml-auto rounded-lg bg-green-600 hover:bg-green-700"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Completing..." : "Finish Setup"}
@@ -109,7 +138,7 @@ export function AdminOnboardingDesign({
 
         {/* Cancel Link */}
         <div className="mt-6 text-center">
-          <button 
+          <button
             onClick={onCancel}
             className="text-sm text-gray-600 hover:text-gray-800"
           >
@@ -137,18 +166,20 @@ function PersonalInfoStep({ formData, setFormData }: OnboardingStepProps) {
       <CardContent className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full Name *</Label>
-          <Input 
+          <Input
             id="fullName"
             placeholder="Enter your full name"
             value={formData.fullName}
-            onChange={(e) => setFormData({...formData, fullName: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, fullName: e.target.value })
+            }
             className="rounded-lg"
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="email">Email Address</Label>
-          <Input 
+          <Input
             id="email"
             type="email"
             value={formData.email}
@@ -160,12 +191,14 @@ function PersonalInfoStep({ formData, setFormData }: OnboardingStepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="phone">Phone Number *</Label>
-          <Input 
+          <Input
             id="phone"
             type="tel"
             placeholder="080XXXXXXXX"
             value={formData.phone}
-            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+            onChange={(e) =>
+              setFormData({ ...formData, phone: e.target.value })
+            }
             className="rounded-lg"
           />
         </div>
@@ -173,23 +206,27 @@ function PersonalInfoStep({ formData, setFormData }: OnboardingStepProps) {
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="password">Create Password *</Label>
-            <Input 
+            <Input
               id="password"
               type="password"
               placeholder="Minimum 8 characters"
               value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, password: e.target.value })
+              }
               className="rounded-lg"
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password *</Label>
-            <Input 
+            <Input
               id="confirmPassword"
               type="password"
               placeholder="Re-enter password"
               value={formData.confirmPassword}
-              onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+              onChange={(e) =>
+                setFormData({ ...formData, confirmPassword: e.target.value })
+              }
               className="rounded-lg"
             />
           </div>
@@ -238,13 +275,15 @@ function LocalGovernmentStep({ formData, setFormData }: OnboardingStepProps) {
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="state">State *</Label>
-          <Select 
-            value={formData.state} 
-            onValueChange={(value) => setFormData({
-              ...formData, 
-              state: value,
-              localGovernment: ""
-            })}
+          <Select
+            value={formData.state}
+            onValueChange={(value) =>
+              setFormData({
+                ...formData,
+                state: value,
+                localGovernment: "",
+              })
+            }
           >
             <SelectTrigger className="rounded-lg">
               <SelectValue placeholder="Select state" />
@@ -261,29 +300,45 @@ function LocalGovernmentStep({ formData, setFormData }: OnboardingStepProps) {
 
         <div className="space-y-2">
           <Label htmlFor="localGovernment">Local Government *</Label>
-          <Select 
-            value={formData.localGovernment} 
-            onValueChange={(value) => setFormData({...formData, localGovernment: value})}
+          <Select
+            value={formData.localGovernment}
+            onValueChange={(value) =>
+              setFormData({ ...formData, localGovernment: value })
+            }
             disabled={!formData.state}
           >
             <SelectTrigger className="rounded-lg">
-              <SelectValue placeholder={formData.state ? "Select local government" : "Select state first"} />
+              <SelectValue
+                placeholder={
+                  formData.state
+                    ? "Select local government"
+                    : "Select state first"
+                }
+              />
             </SelectTrigger>
             <SelectContent>
-              {formData.state && localGovernments[formData.state]?.map((lg) => (
-                <SelectItem key={lg.value} value={lg.value}>
-                  {lg.label}
-                </SelectItem>
-              ))}
+              {formData.state &&
+                localGovernments[formData.state]?.map((lg) => (
+                  <SelectItem key={lg.value} value={lg.value}>
+                    {lg.label}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
         </div>
 
         <div className="bg-teal-50 border border-teal-200 rounded-lg p-4">
-          <h4 className="text-sm font-medium text-teal-800 mb-2">Assignment Summary</h4>
+          <h4 className="text-sm font-medium text-teal-800 mb-2">
+            Assignment Summary
+          </h4>
           <div className="text-sm text-teal-700">
-            <p><strong>State:</strong> {formData.state || "Not selected"}</p>
-            <p><strong>Local Government:</strong> {formData.localGovernment || "Not selected"}</p>
+            <p>
+              <strong>State:</strong> {formData.state || "Not selected"}
+            </p>
+            <p>
+              <strong>Local Government:</strong>{" "}
+              {formData.localGovernment || "Not selected"}
+            </p>
           </div>
         </div>
       </CardContent>
@@ -295,39 +350,42 @@ function LocalGovernmentStep({ formData, setFormData }: OnboardingStepProps) {
 function PermissionsStep({ formData, setFormData }: OnboardingStepProps) {
   const permissionsList = [
     {
-      key: 'approveApplications' as const,
-      label: 'Approve Applications',
-      description: 'Review and approve/reject certificate applications'
+      key: "approveApplications" as const,
+      label: "Approve Applications",
+      description: "Review and approve/reject certificate applications",
     },
     {
-      key: 'manageFees' as const,
-      label: 'Manage Fees',
-      description: 'Set and modify application and processing fees'
+      key: "manageFees" as const,
+      label: "Manage Fees",
+      description: "Set and modify application and processing fees",
     },
     {
-      key: 'manageRequirements' as const,
-      label: 'Manage Requirements',
-      description: 'Configure required documents and application fields'
+      key: "manageRequirements" as const,
+      label: "Manage Requirements",
+      description: "Configure required documents and application fields",
     },
     {
-      key: 'viewAnalytics' as const,
-      label: 'View Analytics',
-      description: 'Access reports and analytics dashboard'
+      key: "viewAnalytics" as const,
+      label: "View Analytics",
+      description: "Access reports and analytics dashboard",
     },
     {
-      key: 'exportData' as const,
-      label: 'Export Data',
-      description: 'Download reports and application data'
-    }
+      key: "exportData" as const,
+      label: "Export Data",
+      description: "Download reports and application data",
+    },
   ];
 
-  const handlePermissionChange = (permission: keyof typeof formData.permissions, checked: boolean) => {
+  const handlePermissionChange = (
+    permission: keyof typeof formData.permissions,
+    checked: boolean
+  ) => {
     setFormData({
       ...formData,
       permissions: {
         ...formData.permissions,
-        [permission]: checked
-      }
+        [permission]: checked,
+      },
     });
   };
 
@@ -345,18 +403,28 @@ function PermissionsStep({ formData, setFormData }: OnboardingStepProps) {
       <CardContent className="space-y-6">
         <div className="space-y-4">
           {permissionsList.map((permission) => (
-            <div key={permission.key} className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <div
+              key={permission.key}
+              className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
               <Checkbox
                 id={permission.key}
                 checked={formData.permissions[permission.key]}
-                onCheckedChange={(checked) => handlePermissionChange(permission.key, checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handlePermissionChange(permission.key, checked as boolean)
+                }
                 className="mt-1"
               />
               <div className="flex-1">
-                <Label htmlFor={permission.key} className="text-sm font-medium cursor-pointer">
+                <Label
+                  htmlFor={permission.key}
+                  className="text-sm font-medium cursor-pointer"
+                >
                   {permission.label}
                 </Label>
-                <p className="text-xs text-gray-600 mt-1">{permission.description}</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  {permission.description}
+                </p>
               </div>
             </div>
           ))}

@@ -1,16 +1,15 @@
-// src/pages/Landing/LandingDesign.tsx
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/button';
 import { Navigation } from '../../components/Navigation';
 import { Shield, CheckCircle, Search, Lock, Clock, FileCheck } from 'lucide-react';
-import type { NavigationProps } from '../../Types/types';
 
-interface LandingDesignProps extends NavigationProps {}
+export function LandingDesign() {
+  const navigate = useNavigate(); // ✅ Use hook directly
 
-export function LandingDesign({ onNavigate }: LandingDesignProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-secondary/10">
-      <Navigation onNavigate={onNavigate} />
+      <Navigation />
       
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
@@ -32,7 +31,7 @@ export function LandingDesign({ onNavigate }: LandingDesignProps) {
             <Button 
               size="lg" 
               className="px-8 py-6 rounded-xl"
-              onClick={() => onNavigate('register')}
+              onClick={() => navigate('/register')} // ✅ Direct navigation
             >
               Apply for Certificate
             </Button>
@@ -40,7 +39,7 @@ export function LandingDesign({ onNavigate }: LandingDesignProps) {
               size="lg" 
               variant="outline" 
               className="px-8 py-6 rounded-xl"
-              onClick={() => onNavigate('verify')}
+              onClick={() => navigate('/verify')} // ✅ Direct navigation
             >
               <Search className="w-5 h-5 mr-2" />
               Verify Certificate

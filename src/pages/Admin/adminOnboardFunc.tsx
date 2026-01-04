@@ -1,10 +1,11 @@
-// src/pages/AdminOnboarding/AdminOnboardingFunc.tsx
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminOnboardingDesign } from './adminOnboardDesign';
 import { toast } from 'sonner';
-import type { NavigationProps, OnboardingFormData } from '../../Types/types';
+import type { OnboardingFormData } from '../../Types/types';
 
-export function AdminOnboarding({ onNavigate }: NavigationProps) {
+export function AdminOnboarding() {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 3;
   const progress = (currentStep / totalSteps) * 100;
@@ -82,7 +83,6 @@ export function AdminOnboarding({ onNavigate }: NavigationProps) {
     setIsSubmitting(true);
     
     try {
-      // Mock API call - replace with actual endpoint
       const response = await fetch('/api/admin/onboarding/', {
         method: 'POST',
         headers: {
@@ -94,7 +94,7 @@ export function AdminOnboarding({ onNavigate }: NavigationProps) {
       if (response.ok) {
         toast.success("Admin Onboarding Completed Successfully");
         setTimeout(() => {
-          onNavigate('lg-admin-dashboard');
+          navigate('/lg-admin-dashboard');
         }, 1500);
       } else {
         throw new Error('Failed to complete onboarding');
@@ -108,7 +108,7 @@ export function AdminOnboarding({ onNavigate }: NavigationProps) {
   };
 
   const handleCancel = () => {
-    onNavigate('landing');
+    navigate('/');
   };
 
   return (

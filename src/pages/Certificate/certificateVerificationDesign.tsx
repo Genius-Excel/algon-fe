@@ -1,32 +1,58 @@
-import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Shield, Search, CheckCircle, XCircle, Calendar, MapPin, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import {
+  Shield,
+  Search,
+  CheckCircle,
+  XCircle,
+  Calendar,
+  MapPin,
+  User,
+} from "lucide-react";
 
-interface CertificateVerificationProps {
+type VerificationResult = 'valid' | 'invalid' | null;
+
+interface CertificateData {
+  holderName: string;
+  certificateId: string;
+  lga: string;
+  state: string;
+  issueDate: string;
+  status: string;
+  nin?: string;
+  expiryDate?: string;
+}
+
+
+interface CertificateVerificationDesignProps {
+  certificateId: string;
+  setCertificateId: (id: string) => void;
+  verificationResult: VerificationResult;
+  certificateData: CertificateData | null; // ✅ Add this
+  isLoading: boolean;
+  handleVerify: (e: React.FormEvent) => void;
   onNavigate: (page: string) => void;
 }
 
-export function CertificateVerification({ onNavigate }: CertificateVerificationProps) {
-  const [certificateId, setCertificateId] = useState("");
-  const [verificationResult, setVerificationResult] = useState<'valid' | 'invalid' | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    
-    // Mock verification
-    setTimeout(() => {
-      if (certificateId === "CERT-IKJ-2025-001" || certificateId.startsWith("CERT-")) {
-        setVerificationResult('valid');
-      } else {
-        setVerificationResult('invalid');
-      }
-      setIsLoading(false);
-    }, 1500);
-  };
+export function CertificateVerificationDesign({
+  certificateId,
+  setCertificateId,
+  verificationResult,
+  certificateData,
+  isLoading,
+  handleVerify,
+  onNavigate,
+}: CertificateVerificationDesignProps) {
+  const navigate = useNavigate(); // ✅ Use hook for new navigation
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/10 to-white">
@@ -40,10 +66,12 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
               </div>
               <div>
                 <div className="text-foreground">LGCIVS</div>
-                <div className="text-xs text-muted-foreground">Certificate Verification</div>
+                <div className="text-xs text-muted-foreground">
+                  Certificate Verification
+                </div>
               </div>
             </div>
-            <Button variant="outline" onClick={() => onNavigate('landing')}>
+            <Button variant="outline" onClick={() => navigate('/')}> {/* ✅ Direct navigation */}
               Back to Home
             </Button>
           </div>
@@ -54,7 +82,8 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
         <div className="text-center mb-12">
           <h1 className="mb-4">Verify Certificate</h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Enter the certificate ID to verify the authenticity of a Local Government Indigene Certificate
+            Enter the certificate ID to verify the authenticity of a Local
+            Government Indigene Certificate
           </p>
         </div>
 
@@ -62,28 +91,34 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
         <Card className="rounded-xl shadow-lg mb-8">
           <CardHeader>
             <CardTitle>Enter Certificate Details</CardTitle>
-            <CardDescription>The certificate ID can be found on the certificate document</CardDescription>
+            <CardDescription>
+              The certificate ID can be found on the certificate document
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleVerify} className="space-y-4">
               <div className="flex gap-4">
-                <Input 
+                <Input
                   placeholder="Enter Certificate ID (e.g., CERT-IKJ-2025-001)"
                   value={certificateId}
                   onChange={(e) => setCertificateId(e.target.value)}
                   className="rounded-lg flex-1"
                 />
-                <Button type="submit" className="rounded-lg" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="rounded-lg"
+                  disabled={isLoading}
+                >
                   <Search className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Verifying...' : 'Verify'}
+                  {isLoading ? "Verifying..." : "Verify"}
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
 
-        {/* Verification Result */}
-        {verificationResult === 'valid' && (
+        {/* Verification Result - Valid */}
+        {verificationResult === "valid" && certificateData && (
           <Card className="rounded-xl shadow-lg border-2 border-green-200 bg-green-50">
             <CardContent className="p-8">
               <div className="text-center mb-6">
@@ -91,7 +126,9 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
                 <h2 className="text-green-800 mb-2">Certificate Verified</h2>
-                <p className="text-green-700">This certificate is authentic and valid</p>
+                <p className="text-green-700">
+                  This certificate is authentic and valid
+                </p>
               </div>
 
               <div className="bg-white rounded-xl p-6 space-y-4">
@@ -99,29 +136,37 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   <div className="flex items-start gap-3">
                     <User className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Certificate Holder</p>
-                      <p className="text-sm">John Oluwaseun Doe</p>
+                      <p className="text-xs text-muted-foreground">
+                        Certificate Holder
+                      </p>
+                      <p className="text-sm">{certificateData.holderName}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Certificate ID</p>
-                      <p className="text-sm">CERT-IKJ-2025-001</p>
+                      <p className="text-xs text-muted-foreground">
+                        Certificate ID
+                      </p>
+                      <p className="text-sm">{certificateData.certificateId}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Local Government</p>
-                      <p className="text-sm">Ikeja LGA, Lagos State</p>
+                      <p className="text-xs text-muted-foreground">
+                        Local Government
+                      </p>
+                      <p className="text-sm">{certificateData.lga}, {certificateData.state}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <Calendar className="w-5 h-5 text-primary mt-0.5" />
                     <div>
-                      <p className="text-xs text-muted-foreground">Issue Date</p>
-                      <p className="text-sm">October 15, 2025</p>
+                      <p className="text-xs text-muted-foreground">
+                        Issue Date
+                      </p>
+                      <p className="text-sm">{new Date(certificateData.issueDate).toLocaleDateString()}</p>
                     </div>
                   </div>
                 </div>
@@ -130,10 +175,12 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs text-muted-foreground">Status</p>
-                      <p className="text-sm text-green-600">Active • Valid</p>
+                      <p className="text-sm text-green-600">{certificateData.status}</p>
                     </div>
                     <div className="w-20 h-20 border-2 border-border rounded-lg flex items-center justify-center">
-                      <div className="text-xs text-center text-muted-foreground">QR Code</div>
+                      <div className="text-xs text-center text-muted-foreground">
+                        QR Code
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -146,7 +193,8 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
           </Card>
         )}
 
-        {verificationResult === 'invalid' && (
+        {/* Verification Result - Invalid */}
+        {verificationResult === "invalid" && (
           <Card className="rounded-xl shadow-lg border-2 border-red-200 bg-red-50">
             <CardContent className="p-8">
               <div className="text-center">
@@ -155,7 +203,8 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                 </div>
                 <h2 className="text-red-800 mb-2">Invalid Certificate</h2>
                 <p className="text-red-700 mb-6">
-                  The certificate ID you entered could not be verified. Please check and try again.
+                  The certificate ID you entered could not be verified. Please
+                  check and try again.
                 </p>
                 <div className="bg-white rounded-xl p-6 text-left space-y-3">
                   <p className="text-sm">Possible reasons:</p>
@@ -167,7 +216,8 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   </ul>
                 </div>
                 <p className="text-sm text-red-700 mt-6">
-                  If you believe this is an error, please contact your Local Government office.
+                  If you believe this is an error, please contact your Local
+                  Government office.
                 </p>
               </div>
             </CardContent>
@@ -188,7 +238,9 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   </div>
                   <div>
                     <p>Locate the Certificate ID</p>
-                    <p className="text-sm text-muted-foreground">Find the unique certificate ID on the certificate document</p>
+                    <p className="text-sm text-muted-foreground">
+                      Find the unique certificate ID on the certificate document
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -197,7 +249,9 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   </div>
                   <div>
                     <p>Enter the ID</p>
-                    <p className="text-sm text-muted-foreground">Type or paste the certificate ID in the search box above</p>
+                    <p className="text-sm text-muted-foreground">
+                      Type or paste the certificate ID in the search box above
+                    </p>
                   </div>
                 </div>
                 <div className="flex gap-3">
@@ -206,7 +260,9 @@ export function CertificateVerification({ onNavigate }: CertificateVerificationP
                   </div>
                   <div>
                     <p>Verify Instantly</p>
-                    <p className="text-sm text-muted-foreground">Click verify to check the certificate's authenticity</p>
+                    <p className="text-sm text-muted-foreground">
+                      Click verify to check the certificate's authenticity
+                    </p>
                   </div>
                 </div>
               </div>

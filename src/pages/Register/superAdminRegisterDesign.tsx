@@ -13,8 +13,6 @@ import {
 import { Logo, PageContainer } from "../../DesignSystem/designSyetem";
 
 interface RegisterFormData {
-  firstName: string;
-  lastName: string;
   nin: string;
   email: string;
   phone: string;
@@ -22,20 +20,20 @@ interface RegisterFormData {
   confirmPassword: string;
 }
 
-interface RegisterDesignProps {
+interface SuperAdminRegisterDesignProps {
   formData: RegisterFormData;
   setFormData: (data: RegisterFormData) => void;
   handleSubmit: () => void;
-  isLoading?: boolean; // Add this
+  isLoading?: boolean;
 }
 
-export function RegisterDesign({
+export function SuperAdminRegisterDesign({
   formData,
   setFormData,
   handleSubmit,
   isLoading,
-}: RegisterDesignProps) {
-  const navigate = useNavigate(); // ✅ Use hook directly
+}: SuperAdminRegisterDesignProps) {
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/20 to-white flex items-center justify-center p-4">
@@ -48,43 +46,14 @@ export function RegisterDesign({
 
         <Card className="rounded-xl shadow-lg">
           <CardHeader>
-            <CardTitle>Register</CardTitle>
+            <CardTitle>Super Admin Register</CardTitle>
             <CardDescription>
-              Create an account to apply for your certificate
+              Create a super admin account to manage the system
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    type="text"
-                    placeholder="John"
-                    value={formData.firstName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, firstName: e.target.value })
-                    }
-                    className="rounded-lg"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    type="text"
-                    placeholder="Doe"
-                    value={formData.lastName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, lastName: e.target.value })
-                    }
-                    className="rounded-lg"
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="nin">
                   National Identification Number (NIN)
@@ -99,6 +68,7 @@ export function RegisterDesign({
                   }
                   className="rounded-lg"
                   maxLength={11}
+                  disabled={isLoading}
                 />
               </div>
 
@@ -113,6 +83,7 @@ export function RegisterDesign({
                     setFormData({ ...formData, email: e.target.value })
                   }
                   className="rounded-lg"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -127,6 +98,7 @@ export function RegisterDesign({
                     setFormData({ ...formData, phone: e.target.value })
                   }
                   className="rounded-lg"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -141,6 +113,7 @@ export function RegisterDesign({
                     setFormData({ ...formData, password: e.target.value })
                   }
                   className="rounded-lg"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -158,6 +131,7 @@ export function RegisterDesign({
                     })
                   }
                   className="rounded-lg"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -167,6 +141,7 @@ export function RegisterDesign({
                   type="checkbox"
                   className="mt-1 rounded"
                   required
+                  disabled={isLoading}
                 />
                 <span className="text-xs text-muted-foreground">
                   I agree to the Terms of Service and Privacy Policy
@@ -178,14 +153,17 @@ export function RegisterDesign({
                 className="w-full rounded-lg"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating Account..." : "Create Account"}
+                {isLoading
+                  ? "Creating Account..."
+                  : "Create Super Admin Account"}
               </Button>
             </div>
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => navigate("/login")} // ✅ Direct navigation
+                onClick={() => navigate("/login")}
                 className="text-sm text-primary hover:underline"
+                disabled={isLoading}
               >
                 Already have an account? Sign in
               </button>
@@ -195,8 +173,9 @@ export function RegisterDesign({
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => navigate("/")} // ✅ Direct navigation
+            onClick={() => navigate("/")}
             className="text-sm text-muted-foreground hover:text-foreground"
+            disabled={isLoading}
           >
             ← Back to home
           </button>

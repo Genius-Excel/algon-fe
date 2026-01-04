@@ -1,5 +1,5 @@
-// src/pages/Login/LoginDesign.tsx
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -10,22 +10,16 @@ import {
   CardHeader,
   CardTitle,
 } from "../../components/ui/card";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "../../components/ui/tabs";
+import { toast } from "sonner";
 import { Logo, PageContainer } from "../../DesignSystem/designSyetem";
-import type { UserRole } from "../../Types/types";
 
 interface LoginDesignProps {
   email: string;
   password: string;
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
-  handleLogin: (userType: UserRole) => void;
-  onNavigate: (page: string) => void;
+  handleLogin: () => void;
+  isLoading: boolean;
 }
 
 export function LoginDesign({
@@ -34,8 +28,15 @@ export function LoginDesign({
   setEmail,
   setPassword,
   handleLogin,
-  onNavigate,
+  isLoading,
 }: LoginDesignProps) {
+  const navigate = useNavigate();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleLogin();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-secondary/20 to-white flex items-center justify-center p-4">
       <PageContainer maxWidth="sm" className="w-full">
@@ -48,43 +49,64 @@ export function LoginDesign({
         <Card className="rounded-xl shadow-lg">
           <CardHeader>
             <CardTitle>Sign In</CardTitle>
+            <CardDescription>
+              Enter your credentials to access your account
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="applicant" className="w-full">
-              <TabsContent value="applicant" className="space-y-4 mt-6">
-                <LoginForm
-                  onLogin={() => handleLogin("applicant")}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email or NIN</Label>
+                <Input
+                  id="email"
+                  type="text"
+                  placeholder="Enter your email or NIN"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="rounded-lg"
+                  disabled={isLoading}
                 />
-              </TabsContent>
+              </div>
 
-              <TabsContent value="lg-admin" className="space-y-4 mt-6">
-                <LoginForm
-                  onLogin={() => handleLogin("lg-admin")}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="rounded-lg"
+                  disabled={isLoading}
                 />
-              </TabsContent>
+              </div>
 
-              <TabsContent value="super-admin" className="space-y-4 mt-6">
-                <LoginForm
-                  onLogin={() => handleLogin("super-admin")}
-                  email={email}
-                  password={password}
-                  setEmail={setEmail}
-                  setPassword={setPassword}
-                />
-              </TabsContent>
-            </Tabs>
+              <div className="flex items-center justify-between text-sm">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="rounded" />
+                  <span className="text-muted-foreground">Remember me</span>
+                </label>
+                <button
+                  type="button"
+                  className="text-primary hover:underline"
+                  onClick={() => navigate("/forgot-password")}
+                >
+                  Forgot password?
+                </button>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full rounded-lg"
+                disabled={isLoading}
+              >
+                {isLoading ? "Signing in..." : "Sign In"}
+              </Button>
+            </form>
 
             <div className="mt-6 text-center">
               <button
-                onClick={() => onNavigate("register")}
+                onClick={() => navigate("/register")}
                 className="text-sm text-primary hover:underline"
               >
                 Don't have an account? Register here
@@ -95,68 +117,13 @@ export function LoginDesign({
 
         <div className="mt-6 text-center">
           <button
-            onClick={() => onNavigate("landing")}
+            onClick={() => navigate("/")}
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             ← Back to home
           </button>
         </div>
       </PageContainer>
-    </div>
-  );
-}
-
-interface LoginFormProps {
-  onLogin: () => void;
-  email: string;
-  password: string;
-  setEmail: (email: string) => void;
-  setPassword: (password: string) => void;
-}
-
-function LoginForm({
-  onLogin,
-  email,
-  password,
-  setEmail,
-  setPassword,
-}: LoginFormProps) {
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email or NIN</Label>
-        <Input
-          id="email"
-          type="text"
-          placeholder="Enter your email or NIN"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Enter your password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg"
-        />
-      </div>
-      <div className="flex items-center justify-between text-sm">
-        <label className="flex items-center gap-2">
-          <input type="checkbox" className="rounded" />
-          <span className="text-muted-foreground">Remember me</span>
-        </label>
-        <button type="button" className="text-primary hover:underline">
-          Forgot password?
-        </button>
-      </div>
-      <Button onClick={onLogin} className="w-full rounded-lg">
-        Sign In
-      </Button>
     </div>
   );
 }
