@@ -94,12 +94,16 @@ export function RegisterDesign({
                   type="text"
                   placeholder="Enter your 11-digit NIN"
                   value={formData.nin}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nin: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+                    setFormData({ ...formData, nin: value });
+                  }}
                   className="rounded-lg"
                   maxLength={11}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Must be exactly 11 digits
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -121,13 +125,18 @@ export function RegisterDesign({
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="080XXXXXXXX"
+                  placeholder="09085561218"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+                    setFormData({ ...formData, phone: value });
+                  }}
                   className="rounded-lg"
+                  maxLength={11}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Enter 11 digits (e.g., 09085561218)
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -142,6 +151,10 @@ export function RegisterDesign({
                   }
                   className="rounded-lg"
                 />
+                <p className="text-xs text-muted-foreground">
+                  Must include uppercase, lowercase, numbers, and special
+                  characters (@$!%*?&#)
+                </p>
               </div>
 
               <div className="space-y-2">

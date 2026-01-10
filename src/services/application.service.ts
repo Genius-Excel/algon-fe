@@ -2,7 +2,7 @@ import apiClient from "./api";
 import type { Application, ApplicationFormData } from "../Types/types";
 import { mockApplicationService } from "./mock.service";
 
-const USE_MOCK = true; // API integration enabled
+const USE_MOCK = false; // API integration enabled
 
 // API Response types based on documentation
 interface CertificateApplicationResponse {
@@ -351,9 +351,10 @@ class ApplicationService {
   }
 
   // Verify NIN information
+  // Verify NIN information
   async verifyNIN(
     applicationId: string,
-    type: "certificate" | "digitization"
+    type: "certificate" | "digitization" | "certificate,digitization"
   ): Promise<NINVerificationResponse> {
     if (USE_MOCK) {
       return {

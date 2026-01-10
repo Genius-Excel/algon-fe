@@ -1,7 +1,7 @@
 import apiClient from "./api";
 import { mockCertificateService } from "./mock.service"; // ✅ Import correct mock
 
-const USE_MOCK = true; // API integration enabled
+const USE_MOCK = false; // API integration enabled
 
 class CertificateService {
   async downloadCertificate(id: string): Promise<Blob> {
@@ -19,8 +19,14 @@ class CertificateService {
     if (USE_MOCK) {
       return mockCertificateService.verifyCertificate(certificateNumber); // ✅ Use correct mock
     }
-    const response = await apiClient.get(
-      `/certificates/verify/${certificateNumber}/`
+    const response = await apiClient.post(
+      `/certificate/verify`,
+      { cert_id: certificateNumber },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
     return response.data;
   }

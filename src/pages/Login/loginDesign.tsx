@@ -56,15 +56,16 @@ export function LoginDesign({
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email or NIN</Label>
+                <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
-                  type="text"
-                  placeholder="Enter your email or NIN"
+                  type="email"
+                  placeholder="Enter your email address"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="rounded-lg"
                   disabled={isLoading}
+                  required
                 />
               </div>
 

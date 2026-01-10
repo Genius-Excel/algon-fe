@@ -92,7 +92,9 @@ export interface ApplicationStepProps {
 export interface DigitizationFormData {
   nin: string;
   email: string;
+  full_name: string;
   phone: string;
+  state: string;
   lga: string;
   certificateRef: string;
   paymentReference?: string;
@@ -162,6 +164,19 @@ export interface CertificateVerificationData {
   expiryDate?: string;
 }
 
+export interface CertificateVerificationResponse {
+  message: string;
+  data: {
+    status: string;
+    certificate_type: string;
+    expiry_date: string;
+    issued_at: string;
+    verification_code: string;
+    certificate_number: string;
+    id: string;
+  };
+}
+
 // ============================================================================
 // ADMIN ONBOARDING
 // ============================================================================
@@ -213,6 +228,11 @@ export interface LocalGovernment {
   revenue: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface AllLocalGovernmentsResponse {
+  message: string;
+  data: LocalGovernment[];
 }
 
 export interface DynamicField {
@@ -296,9 +316,10 @@ export interface AuditLogsResponse {
 }
 
 export interface InviteLGAdminRequest {
-  state: string;
-  lga: string;
-  full_name: string;
+  state: string; // UUID of the State
+  lga: string; // UUID of the Local Government Area
+  first_name: string;
+  last_name: string;
   email: string;
 }
 
@@ -313,6 +334,42 @@ export interface InviteLGAdminResponse {
     role: string;
     email_verified: boolean;
   }>;
+}
+
+export interface UpdateLGAdminRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+export interface UpdateLGAdminResponse {
+  message: string;
+  data: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    role: string;
+    email_verified: boolean;
+  };
+}
+
+export interface UpdateLGAdminRequest {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
+export interface UpdateLGAdminResponse {
+  message: string;
+  data: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+    role: string;
+    email_verified: boolean;
+  };
 }
 
 export interface MetricCard {
@@ -585,11 +642,12 @@ export interface PaystackPaymentData {
 }
 
 export interface PaymentInitiationResponse {
+  status: boolean;
   message: string;
   data: {
-    status: boolean;
-    message: string;
-    data: PaystackPaymentData;
+    authorization_url: string;
+    access_code: string;
+    reference: string;
   };
 }
 
@@ -614,14 +672,26 @@ export interface LGAFeeResponse {
   data: LGAFeeData[];
 }
 
+export interface CreateLGAFeeRequest {
+  application_fee: number; // Amount in NGN
+  digitization_fee: number; // Amount in NGN, 0 if not applicable
+  regeneration_fee: number; // Amount in NGN, 0 if not applicable
+}
+
 export interface CreateLGAFeeResponse {
   message: string;
   data: LGAFeeData;
 }
 
+export interface UpdateLGAFeeRequest {
+  application_fee: number; // Amount in NGN
+  digitization_fee: number; // Amount in NGN, 0 if not applicable
+  regeneration_fee: number; // Amount in NGN, 0 if not applicable
+}
+
 export interface UpdateLGAFeeResponse {
   message: string;
-  data: LGAFeeData[];
+  data: LGAFeeData[]; // Returns array with updated fee
 }
 
 // ============================================================================
@@ -632,15 +702,49 @@ export interface DynamicResponseFieldData {
   id: string;
   field_label: string;
   field_name: string;
+  field_type: string; // e.g., "file", "text", "number"
+  is_required: boolean;
+  created_at: string; // ISO 8601
+  updated_at: string; // ISO 8601
+  local_government: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface CreateDynamicFieldRequest {
+  local_government: string; // UUID of the LGA
+  field_label: string;
+  field_name: string;
+  is_required: boolean;
+  field_type: string;
+}
+
+export interface CreateDynamicFieldData {
+  id: string;
+  field_label: string;
+  field_name: string;
   field_type: string;
   is_required: boolean;
-  created_at: string;
-  updated_at: string;
-  local_government: string;
-  created_by: string;
+  created_at: string; // ISO 8601
+  updated_at: string; // ISO 8601
+  local_government: string; // UUID (string, not object)
+  created_by: string; // UUID
 }
 
 export interface CreateDynamicFieldResponse {
+  message: string; // "Additional fields successfully created"
+  data: CreateDynamicFieldData;
+}
+
+export interface UpdateDynamicFieldRequest {
+  field_label: string;
+  field_name: string;
+  is_required: boolean;
+  field_type: string;
+}
+
+export interface UpdateDynamicFieldResponse {
   message: string;
   data: DynamicResponseFieldData;
 }
@@ -718,6 +822,37 @@ export interface LGAdminDashboardResponse {
     weekly_applications: number;
     approval_statistics: number;
     recent_applications: LGDashboardApplication[];
+  };
+}
+
+export interface AdminApplicationsResponse {
+  message: string;
+  data: LGDashboardApplication[];
+}
+
+export interface MonthlyBreakdownItem {
+  month: string;
+  total: number;
+}
+
+export interface ReportAnalyticsResponse {
+  message: string;
+  data: {
+    metric_cards: {
+      total_revenue: number;
+      total_requests: number;
+      approval_rate: number;
+      average_processing_days: number;
+    };
+    status_distribution: {
+      approved: number;
+      pending: number;
+      rejected: number;
+    };
+    monthly_breakdown: {
+      certificate: MonthlyBreakdownItem[];
+      digitizations: MonthlyBreakdownItem[];
+    };
   };
 }
 

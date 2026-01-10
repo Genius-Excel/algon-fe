@@ -2,7 +2,7 @@ import apiClient from "./api";
 import type { DynamicField, OnboardingFormData } from "../Types/types";
 import { mockAdminService } from "./mock.service";
 
-const USE_MOCK = true;
+const USE_MOCK = false;
 
 class AdminService {
   // Admin Onboarding
@@ -26,34 +26,140 @@ class AdminService {
     return response.data;
   }
 
-  async createDynamicField(fieldData: Omit<DynamicField, "id">) {
+  async createDynamicField(fieldData: {
+    local_government: string;
+    field_label: string;
+    field_name: string;
+    is_required: boolean;
+    field_type: string;
+  }) {
     if (USE_MOCK) {
       return mockAdminService.createDynamicField(fieldData);
     }
-    const response = await apiClient.post("/lg/requirements/", fieldData);
-    return response.data;
+
+    try {
+      const response = await apiClient.post(
+        "/admin/create-response-field",
+        fieldData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message ||
+        "Failed to create dynamic response field";
+
+      if (status === 400) {
+        throw new Error(
+          message || "Invalid field data. Please check all required fields."
+        );
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. You do not have permission to create response fields."
+        );
+      } else if (status === 409) {
+        throw new Error(
+          "Duplicate field name. A field with this name already exists for this LGA."
+        );
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the field data."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
   }
 
   async updateDynamicField(
     fieldId: string,
-    fieldData: Omit<DynamicField, "id">
+    fieldData: {
+      field_label: string;
+      field_name: string;
+      is_required: boolean;
+      field_type: string;
+    }
   ) {
     if (USE_MOCK) {
       return mockAdminService.updateDynamicField(fieldId, fieldData);
     }
-    const response = await apiClient.put(
-      `/lg/requirements/${fieldId}/`,
-      fieldData
-    );
-    return response.data;
+
+    try {
+      const response = await apiClient.patch(
+        `/api/admin/response-fields/${fieldId}`,
+        fieldData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to update dynamic field";
+
+      if (status === 400) {
+        throw new Error(
+          message || "Invalid field data. Please check all fields."
+        );
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. You do not have permission to update this field."
+        );
+      } else if (status === 404) {
+        throw new Error("Dynamic field not found. Please check the field ID.");
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the field data."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
   }
 
   async deleteDynamicField(fieldId: string) {
     if (USE_MOCK) {
       return mockAdminService.deleteDynamicField(fieldId);
     }
-    const response = await apiClient.delete(`/lg/requirements/${fieldId}/`);
-    return response.data;
+
+    try {
+      const response = await apiClient.delete(
+        `/api/admin/response-fields/${fieldId}`
+      );
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to delete response field";
+
+      if (error.response?.status === 400) {
+        message = "Invalid or malformed response field ID";
+      } else if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You are not allowed to delete this response field";
+      } else if (error.response?.status === 404) {
+        message = "Response field not found";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      }
+
+      throw new Error(message);
+    }
   }
 
   // Dashboard Analytics
@@ -103,22 +209,45 @@ class AdminService {
     if (USE_MOCK) {
       return mockAdminService.getAllLGAs(filters);
     }
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined) {
-          params.append(key, value.toString());
-        }
-      });
+
+    try {
+      const params = new URLSearchParams();
+      if (filters) {
+        Object.entries(filters).forEach(([key, value]) => {
+          if (value !== undefined) {
+            params.append(key, value.toString());
+          }
+        });
+      }
+
+      const queryString = params.toString();
+      const url = queryString
+        ? `/admin/super/local-governments?${queryString}`
+        : "/admin/super/local-governments";
+
+      const response = await apiClient.get(url);
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to load local governments";
+
+      if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. Only super admins can view local governments."
+        );
+      } else if (status === 429) {
+        throw new Error(
+          "Too many requests. Please wait a moment before trying again."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
     }
-
-    const queryString = params.toString();
-    const url = queryString
-      ? `/admin/super/local-governments?${queryString}`
-      : "/admin/super/local-governments";
-
-    const response = await apiClient.get(url);
-    return response.data;
   }
 
   async createLGAdmin(data: {
@@ -131,8 +260,39 @@ class AdminService {
     if (USE_MOCK) {
       return mockAdminService.createLGAdmin(data);
     }
-    const response = await apiClient.post("/admin/super/invite-lg", data);
-    return response.data;
+
+    try {
+      const response = await apiClient.post("/admin/super/invite-lg", data);
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to invite LG admin";
+
+      if (status === 400) {
+        throw new Error(
+          message || "Invalid request. Please check all required fields."
+        );
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. Only super admins can invite LG admins."
+        );
+      } else if (status === 409) {
+        throw new Error(
+          "An LG admin with this email already exists for the specified LGA."
+        );
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the form fields."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
   }
 
   async updateLGAStatus(lgaId: string, status: "active" | "inactive") {
@@ -215,12 +375,103 @@ class AdminService {
       return mockAdminService.createLGAdmin(data);
     }
 
-    const response = await apiClient.post("/admin/super/invite-lg", data, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data;
+    try {
+      const response = await apiClient.post("/admin/super/invite-lg", data, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to invite LG admin";
+
+      if (status === 400) {
+        throw new Error(
+          message || "Invalid request. Please check all required fields."
+        );
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. Only super admins can invite LG admins."
+        );
+      } else if (status === 409) {
+        throw new Error(
+          "An LG admin with this email already exists for the specified LGA."
+        );
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the form fields."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
+  }
+
+  // Super Admin - Update LG Admin
+  async updateLGAdmin(
+    adminId: string,
+    data: {
+      first_name?: string;
+      last_name?: string;
+      email?: string;
+    }
+  ) {
+    if (USE_MOCK) {
+      return {
+        message: "LG admin updated successfully",
+        data: {
+          id: adminId,
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          email: data.email || "",
+          role: "lg-admin",
+          email_verified: false,
+        },
+      };
+    }
+
+    try {
+      const response = await apiClient.put(
+        `/api/admin/super/lg-update/${adminId}`,
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to update LG admin";
+
+      if (status === 400) {
+        throw new Error(message || "Invalid request. Please check the fields.");
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. Only super admins can update LG admins."
+        );
+      } else if (status === 404) {
+        throw new Error("LG admin not found. Please check the admin ID.");
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the form fields."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
   }
 
   // Super Admin - Dashboard
@@ -229,14 +480,63 @@ class AdminService {
       return mockAdminService.getSuperAdminDashboard();
     }
 
-    const response = await apiClient.get("/admin/super/dashboard");
-    return response.data;
+    try {
+      const response = await apiClient.get("/admin/super/dashboard");
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to load dashboard";
+
+      if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. You do not have permission to view the super admin dashboard."
+        );
+      } else if (status === 429) {
+        throw new Error(
+          "Too many requests. Please wait a moment before trying again."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
   }
 
   // LGA Fee Management
+  // LGA Fee Management
   async getLGAFee() {
-    const response = await apiClient.get("/application-fees/local-government");
-    return response.data;
+    try {
+      const response = await apiClient.get(
+        "/application-fees/local-government"
+      );
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || "Failed to load LGA fee configuration";
+
+      if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. You do not have permission to view fee configuration."
+        );
+      } else if (status === 404) {
+        throw new Error("Fee configuration not found for this LGA.");
+      } else if (status === 429) {
+        throw new Error(
+          "Too many requests. Please wait a moment before trying again."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
+      }
+
+      throw new Error(message);
+    }
   }
 
   async createLGAFee(data: {
@@ -244,16 +544,54 @@ class AdminService {
     digitization_fee: number;
     regeneration_fee: number;
   }) {
-    const response = await apiClient.post(
-      "/application-fees/local-government",
-      data,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+    try {
+      const response = await apiClient.post(
+        "/application-fees/local-government",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message ||
+        "Failed to create LGA fee configuration";
+
+      if (status === 400) {
+        throw new Error(
+          message || "Invalid fee data. Please check all fields."
+        );
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. You do not have permission to create fee configuration."
+        );
+      } else if (status === 409) {
+        // Handle specific error format: {"error": { "local_government": [...] }}
+        const errorDetail = error.response?.data?.error?.local_government;
+        if (errorDetail && Array.isArray(errorDetail)) {
+          throw new Error(
+            errorDetail[0] || "Fee configuration already exists for this LGA."
+          );
+        }
+        throw new Error(
+          "Fee configuration already exists for this Local Government."
+        );
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the fee amounts."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
       }
-    );
-    return response.data;
+
+      throw new Error(message);
+    }
   }
 
   async updateLGAFee(data: {
@@ -261,16 +599,45 @@ class AdminService {
     digitization_fee: number;
     regeneration_fee: number;
   }) {
-    const response = await apiClient.patch(
-      "/application-fees/local-government",
-      data,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+    try {
+      const response = await apiClient.patch(
+        "/application-fees/local-government",
+        data,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message ||
+        "Failed to update LGA fee configuration";
+
+      if (status === 400) {
+        throw new Error(
+          message || "Invalid fee data. Please check all fields."
+        );
+      } else if (status === 401) {
+        throw new Error("Authentication failed. Please log in again.");
+      } else if (status === 403) {
+        throw new Error(
+          "Access denied. You do not have permission to update fee configuration."
+        );
+      } else if (status === 404) {
+        throw new Error("Fee configuration not found for this LGA.");
+      } else if (status === 422) {
+        throw new Error(
+          message || "Validation error. Please check the fee amounts."
+        );
+      } else if (status >= 500) {
+        throw new Error("Server error. Please try again later.");
       }
-    );
-    return response.data;
+
+      throw new Error(message);
+    }
   }
 
   // Admin - Application Management
@@ -311,15 +678,86 @@ class AdminService {
     applicationId: string,
     applicationType: "certificate" | "digitization"
   ) {
-    const response = await apiClient.get(
-      `/admin/applications/${applicationId}?application_type=${applicationType}`
-    );
-    return response.data;
+    try {
+      const response = await apiClient.get(
+        `/admin/applications/${applicationId}?application_type=${applicationType}`
+      );
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to retrieve application details";
+
+      if (error.response?.status === 400) {
+        message = "Invalid application ID or type";
+      } else if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You are not authorized to view this application";
+      } else if (error.response?.status === 404) {
+        message = "Application not found";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      }
+
+      throw new Error(message);
+    }
+  }
+
+  async getAllApplications(params?: {
+    application_type?: "certificate" | "digitization";
+    page?: number;
+    limit?: number;
+  }) {
+    try {
+      const queryParams = new URLSearchParams();
+      if (params) {
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined) {
+            queryParams.append(key, value.toString());
+          }
+        });
+      }
+
+      const queryString = queryParams.toString();
+      const url = queryString
+        ? `/admin/applications?${queryString}`
+        : "/admin/applications";
+
+      const response = await apiClient.get(url);
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to retrieve applications";
+
+      if (error.response?.status === 400) {
+        message = "Invalid query parameters";
+      } else if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You do not have permission to view applications";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      }
+
+      throw new Error(message);
+    }
   }
 
   async getDigitizationOverview() {
-    const response = await apiClient.get("/digitization/overview");
-    return response.data;
+    try {
+      const response = await apiClient.get("/digitization/overview");
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to retrieve digitization overview";
+
+      if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You are not authorized to access digitization overview";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      }
+
+      throw new Error(message);
+    }
   }
 
   // Admin - Dynamic Fields
@@ -351,20 +789,40 @@ class AdminService {
       remarks?: string;
     }
   ) {
-    const response = await apiClient.patch(
-      `/admin/applications/${applicationId}?application_type=${data.application_type}`,
-      {
-        application_type: data.application_type,
-        action: data.action,
-        remarks: data.remarks,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
+    try {
+      const response = await apiClient.patch(
+        `/admin/applications/${applicationId}?application_type=${data.application_type}`,
+        {
+          application_type: data.application_type,
+          action: data.action,
+          remarks: data.remarks,
         },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to manage application";
+
+      if (error.response?.status === 400) {
+        message = "Invalid application data or action";
+      } else if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You are not authorized to manage this application";
+      } else if (error.response?.status === 404) {
+        message = "Application not found";
+      } else if (error.response?.status === 422) {
+        message = error.response?.data?.message || "Validation error";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
       }
-    );
-    return response.data;
+
+      throw new Error(message);
+    }
   }
 
   // LG Admin Dashboard
@@ -373,8 +831,42 @@ class AdminService {
       return mockAdminService.getDashboardStats();
     }
 
-    const response = await apiClient.get("/admin/dashboard");
-    return response.data;
+    try {
+      const response = await apiClient.get("/admin/dashboard");
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to retrieve dashboard data";
+
+      if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You are not authorized to access the dashboard";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      }
+
+      throw new Error(message);
+    }
+  }
+
+  // Admin - Report Analytics
+  async getReportAnalytics() {
+    try {
+      const response = await apiClient.get("/admin/report-analytics");
+      return response.data;
+    } catch (error: any) {
+      let message = "Failed to retrieve report analytics";
+
+      if (error.response?.status === 401) {
+        message = "Authentication failed. Please log in again.";
+      } else if (error.response?.status === 403) {
+        message = "You are not authorized to view analytics";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later.";
+      }
+
+      throw new Error(message);
+    }
   }
 
   // Utility - Get All States and LGs

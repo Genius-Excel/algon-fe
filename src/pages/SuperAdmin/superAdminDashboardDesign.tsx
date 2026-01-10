@@ -59,11 +59,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import type {
-  LocalGovernment,
-  AuditLogEntry,
-  MonthlyData,
-} from "../../Types/types";
+import type { LocalGovernment, AuditLog, MonthlyData } from "../../Types/types";
 
 interface SuperAdminDashboardDesignProps {
   activeTab: string;
@@ -77,9 +73,23 @@ interface SuperAdminDashboardDesignProps {
   monthlyRevenueData: any[];
   lgas: LocalGovernment[];
   filteredLGAs: LocalGovernment[];
-  auditLog: AuditLogEntry[];
+  auditLog: AuditLog[];
+  auditLogPage: number;
+  auditLogPageSize: number;
+  auditLogTotalCount: number;
+  auditLogFilters: {
+    action_type?: string;
+    table_name?: string;
+    user?: string;
+  };
+  onAuditLogPageChange: (page: number) => void;
+  onAuditLogFiltersChange: (filters: {
+    action_type?: string;
+    table_name?: string;
+    user?: string;
+  }) => void;
   handleLogout: () => void;
-  onNavigate: (page: string) => void; // Temporary
+  onNavigate: (page: string) => void;
 }
 
 export function SuperAdminDashboardDesign({
@@ -95,6 +105,12 @@ export function SuperAdminDashboardDesign({
   lgas,
   filteredLGAs,
   auditLog,
+  auditLogPage,
+  auditLogPageSize,
+  auditLogTotalCount,
+  auditLogFilters,
+  onAuditLogPageChange,
+  onAuditLogFiltersChange,
   handleLogout,
   onNavigate,
 }: SuperAdminDashboardDesignProps) {
@@ -201,7 +217,17 @@ export function SuperAdminDashboardDesign({
             />
           )}
 
-          {activeTab === "audit" && <AuditLogTab auditLog={auditLog} />}
+          {activeTab === "audit" && (
+            <AuditLogTab
+              auditLog={auditLog}
+              currentPage={auditLogPage}
+              pageSize={auditLogPageSize}
+              totalCount={auditLogTotalCount}
+              filters={auditLogFilters}
+              onPageChange={onAuditLogPageChange}
+              onFiltersChange={onAuditLogFiltersChange}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -527,7 +553,7 @@ function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
   }, [lga]);
 
   const handleSubmit = async () => {
-    if (!lga) return;
+    if (!lga || !lga.assigned_admin) return;
 
     if (!firstName || !lastName || !email) {
       const { toast } = await import("sonner");
@@ -537,9 +563,16 @@ function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
 
     setIsLoading(true);
     try {
+      const { adminService } = await import("../../services");
       const { toast } = await import("sonner");
 
-      // In mock mode, just show success
+      // Call the update service with admin ID
+      await adminService.updateLGAdmin(lga.assigned_admin.id, {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+      });
+
       toast.success("LG Admin updated successfully!");
 
       // Reset and close
@@ -547,7 +580,25 @@ function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
     } catch (error: any) {
       const { toast } = await import("sonner");
       console.error("Failed to update LG admin:", error);
-      toast.error(error.response?.data?.message || "Failed to update LG admin");
+
+      // Handle specific errors from the service
+      if (error.message) {
+        if (error.message.includes("Authentication failed")) {
+          toast.error("Session expired. Please log in again.");
+        } else if (error.message.includes("Access denied")) {
+          toast.error("You do not have permission to update LG admins.");
+        } else if (error.message.includes("not found")) {
+          toast.error("LG admin not found.");
+        } else if (error.message.includes("Validation error")) {
+          toast.error(error.message);
+        } else if (error.message.includes("Server error")) {
+          toast.error("Server error. Please try again later.");
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error("Failed to update LG admin");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -611,15 +662,38 @@ function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
 }
 
 interface AuditLogTabProps {
-  auditLog: AuditLogEntry[];
+  auditLog: AuditLog[];
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  filters: {
+    action_type?: string;
+    table_name?: string;
+    user?: string;
+  };
+  onPageChange: (page: number) => void;
+  onFiltersChange: (filters: {
+    action_type?: string;
+    table_name?: string;
+    user?: string;
+  }) => void;
 }
 
-function AuditLogTab({ auditLog }: AuditLogTabProps) {
+function AuditLogTab({
+  auditLog,
+  currentPage,
+  pageSize,
+  totalCount,
+  filters,
+  onPageChange,
+  onFiltersChange,
+}: AuditLogTabProps) {
   const [selectedLog, setSelectedLog] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [localFilters, setLocalFilters] = useState(filters);
 
-  const handleLogClick = async (log: AuditLogEntry) => {
+  const handleLogClick = async (log: AuditLog) => {
     setIsDialogOpen(true);
     setIsLoadingDetails(true);
     setSelectedLog(null);
@@ -629,23 +703,137 @@ function AuditLogTab({ auditLog }: AuditLogTabProps) {
       const details = await adminService.getAuditLogById(log.id);
       console.log("Audit log details:", details);
       setSelectedLog(details.data || details);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load audit log details:", error);
       const { toast } = await import("sonner");
-      toast.error("Failed to load audit log details");
+
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+
+      // Handle specific HTTP status codes per API spec
+      if (status === 401 || status === 403) {
+        toast.error("Authentication failed. You may need to log in again.");
+      } else if (status === 404) {
+        toast.error("Audit log entry not found.");
+      } else {
+        toast.error(errorData?.message || "Failed to load audit log details");
+      }
     } finally {
       setIsLoadingDetails(false);
     }
   };
 
+  const handleApplyFilters = () => {
+    onFiltersChange(localFilters);
+  };
+
+  const handleClearFilters = () => {
+    const emptyFilters = {};
+    setLocalFilters(emptyFilters);
+    onFiltersChange(emptyFilters);
+  };
+
+  const totalPages = Math.ceil(totalCount / pageSize);
+
   return (
     <div className="space-y-6">
-      <h2>System Audit Log</h2>
+      <div>
+        <h2>System Audit Log</h2>
+        <p className="text-muted-foreground">
+          Track all administrative actions and system activities
+        </p>
+      </div>
 
+      {/* Filters Card */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle>Recent Activities</CardTitle>
-          <CardDescription>Track all major system activities</CardDescription>
+          <CardTitle>Filters</CardTitle>
+          <CardDescription>
+            Filter audit logs by specific criteria
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="action_type">Action Type</Label>
+              <Select
+                value={localFilters.action_type || "all"}
+                onValueChange={(value) =>
+                  setLocalFilters({
+                    ...localFilters,
+                    action_type: value === "all" ? undefined : value,
+                  })
+                }
+              >
+                <SelectTrigger id="action_type">
+                  <SelectValue placeholder="All actions" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Actions</SelectItem>
+                  <SelectItem value="login">Login</SelectItem>
+                  <SelectItem value="view">View</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="update">Update</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
+                  <SelectItem value="approve">Approve</SelectItem>
+                  <SelectItem value="reject">Reject</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="table_name">Table/Resource</Label>
+              <Input
+                id="table_name"
+                placeholder="e.g., User, Application"
+                value={localFilters.table_name || ""}
+                onChange={(e) =>
+                  setLocalFilters({
+                    ...localFilters,
+                    table_name: e.target.value || undefined,
+                  })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="user">User ID</Label>
+              <Input
+                id="user"
+                placeholder="Filter by user"
+                value={localFilters.user || ""}
+                onChange={(e) =>
+                  setLocalFilters({
+                    ...localFilters,
+                    user: e.target.value || undefined,
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <Button onClick={handleApplyFilters} size="sm">
+              Apply Filters
+            </Button>
+            <Button onClick={handleClearFilters} variant="outline" size="sm">
+              Clear Filters
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Audit Log Table */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle>Audit Log Entries</CardTitle>
+              <CardDescription>
+                Showing {auditLog.length} of {totalCount} total entries
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -662,16 +850,49 @@ function AuditLogTab({ auditLog }: AuditLogTabProps) {
                 >
                   <div className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{log.action}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium">{log.description}</p>
+                      <Badge variant="outline" className="text-xs">
+                        {log.action_type}
+                      </Badge>
+                    </div>
                     <div className="flex gap-4 mt-1 text-xs text-muted-foreground">
-                      <span>{log.user}</span>
-                      <span>{log.timestamp}</span>
+                      <span>User: {log.user}</span>
+                      {log.table_name && <span>Table: {log.table_name}</span>}
+                      <span>{new Date(log.created_at).toLocaleString()}</span>
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6 pt-4 border-t">
+              <div className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -795,7 +1016,6 @@ function AddLGADialog() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("TempPassword@123"); // Default temporary password
   const [isLoading, setIsLoading] = useState(false);
   const [loadingStates, setLoadingStates] = useState(true);
 
@@ -856,7 +1076,6 @@ function AddLGADialog() {
         first_name: firstName,
         last_name: lastName,
         email: email,
-        password: password,
       });
 
       const response = await adminService.createLGAdmin({
@@ -865,14 +1084,16 @@ function AddLGADialog() {
         first_name: firstName,
         last_name: lastName,
         email: email,
-        password: password,
       });
 
       console.log("LG Admin invite response:", response);
-      toast.success(
-        `LG Admin invited successfully! Temporary password: ${password}`,
-        { duration: 8000 }
-      );
+
+      // Show success message with email status from response
+      const successMessage = response.email_status
+        ? `${response.message} ${response.email_status}`
+        : response.message || "LG Admin invited successfully!";
+
+      toast.success(successMessage, { duration: 8000 });
 
       // Reset form
       setSelectedState("");
@@ -880,54 +1101,48 @@ function AddLGADialog() {
       setFirstName("");
       setLastName("");
       setEmail("");
-      setPassword("TempPassword@123"); // Reset to default
     } catch (error: any) {
       const { toast } = await import("sonner");
       console.error("Failed to create LG admin - Full error:", error);
       console.error("Error response data:", error.response?.data);
       console.error("Error response status:", error.response?.status);
-      console.error("Error code:", error.code);
 
-      // Handle timeout errors
-      if (error.code === "ECONNABORTED") {
-        toast.error(
-          "Request timed out. The server is taking too long to respond. Please try again or contact support.",
-          { duration: 5000 }
-        );
+      // Handle specific errors from the service
+      if (error.message) {
+        // Check for authentication errors
+        if (error.message.includes("Authentication failed")) {
+          toast.error("Session expired. Please log in again.");
+          return;
+        }
+        // Check for permission errors
+        if (error.message.includes("Access denied")) {
+          toast.error("You do not have permission to invite LG admins.");
+          return;
+        }
+        // Check for duplicate email errors
+        if (error.message.includes("already exists")) {
+          toast.error(error.message);
+          return;
+        }
+        // Check for validation errors
+        if (error.message.includes("Validation error")) {
+          toast.error(error.message);
+          return;
+        }
+        // Check for server errors
+        if (error.message.includes("Server error")) {
+          toast.error("Server error. Please try again later.");
+          return;
+        }
+        // Show the service error message
+        toast.error(error.message);
         return;
       }
 
-      // Handle specific backend errors
-      if (error.response?.data) {
-        const errorData = error.response.data;
-
-        // Handle field-specific errors (like validation errors)
-        if (
-          typeof errorData === "object" &&
-          !errorData.message &&
-          !errorData.detail
-        ) {
-          const fieldErrors = Object.entries(errorData)
-            .map(([field, errors]) => {
-              const errorList = Array.isArray(errors) ? errors : [errors];
-              return `${field}: ${errorList.join(", ")}`;
-            })
-            .join("; ");
-          toast.error(`Validation errors: ${fieldErrors}`, { duration: 5000 });
-          return;
-        }
-      }
-
-      // Show detailed error message
-      const errorMessage =
-        error.response?.data?.detail ||
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        (error.response?.status === 403
-          ? "Access forbidden. Please ensure you are logged in as a super admin and your session hasn't expired."
-          : "Failed to invite LG admin. Please check the network tab for details.");
-
-      toast.error(errorMessage, { duration: 5000 });
+      // Fallback for unexpected errors
+      toast.error("Failed to invite LG admin. Please try again.", {
+        duration: 5000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -941,7 +1156,10 @@ function AddLGADialog() {
           Add LG Admin
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle>Add New LG Administrator</DialogTitle>
           <DialogDescription>
@@ -1016,6 +1234,7 @@ function AddLGADialog() {
                 placeholder="John"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
             <div className="space-y-2">
@@ -1024,6 +1243,7 @@ function AddLGADialog() {
                 placeholder="Doe"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
+                onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
           </div>
@@ -1034,19 +1254,11 @@ function AddLGADialog() {
               placeholder="admin@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
             />
-          </div>
-          <div className="space-y-2">
-            <Label>Temporary Password</Label>
-            <Input
-              type="text"
-              placeholder="TempPassword@123"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              This temporary password will be sent to the LG admin. They should
-              change it after first login.
+            <p className="text-xs text-muted-foreground mt-1">
+              An invitation email will be sent to this address with login
+              credentials.
             </p>
           </div>
           <Button
@@ -1058,8 +1270,7 @@ function AddLGADialog() {
               !selectedLGA ||
               !firstName ||
               !lastName ||
-              !email ||
-              !password
+              !email
             }
           >
             {isLoading ? "Creating..." : "Create Administrator"}
