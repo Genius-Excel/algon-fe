@@ -448,6 +448,22 @@ function Step1({
           />
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="full_name">Full Name *</Label>
+          <Input
+            id="full_name"
+            placeholder="Enter your full name"
+            value={formData.full_name}
+            onChange={(e) =>
+              setFormData({ ...formData, full_name: e.target.value })
+            }
+            className="rounded-lg"
+          />
+          <p className="text-xs text-muted-foreground">
+            Enter your full name as it appears on your certificate
+          </p>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email Address *</Label>
@@ -473,27 +489,55 @@ function Step1({
                 setFormData({ ...formData, phone: e.target.value })
               }
               className="rounded-lg"
+              maxLength={11}
             />
           </div>
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="lga">Local Government *</Label>
-          <Select
-            value={formData.lga}
-            onValueChange={(value) => setFormData({ ...formData, lga: value })}
-          >
-            <SelectTrigger id="lga" className="rounded-lg">
-              <SelectValue placeholder="Select your LGA" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ikeja">Ikeja</SelectItem>
-              <SelectItem value="lagos-island">Lagos Island</SelectItem>
-              <SelectItem value="surulere">Surulere</SelectItem>
-              <SelectItem value="eti-osa">Eti-Osa</SelectItem>
-              <SelectItem value="alimosho">Alimosho</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="state">State *</Label>
+            <Select
+              value={formData.state}
+              onValueChange={(value) =>
+                setFormData({ ...formData, state: value })
+              }
+            >
+              <SelectTrigger id="state" className="rounded-lg">
+                <SelectValue placeholder="Select your State" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Lagos">Lagos</SelectItem>
+                <SelectItem value="Oyo">Oyo</SelectItem>
+                <SelectItem value="Kano">Kano</SelectItem>
+                <SelectItem value="Rivers">Rivers</SelectItem>
+                <SelectItem value="Kaduna">Kaduna</SelectItem>
+                <SelectItem value="Abuja">Federal Capital Territory</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lga">Local Government *</Label>
+            <Select
+              value={formData.lga}
+              onValueChange={(value) =>
+                setFormData({ ...formData, lga: value })
+              }
+            >
+              <SelectTrigger id="lga" className="rounded-lg">
+                <SelectValue placeholder="Select your LGA" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Ikeja">Ikeja</SelectItem>
+                <SelectItem value="Lagos Island">Lagos Island</SelectItem>
+                <SelectItem value="Surulere">Surulere</SelectItem>
+                <SelectItem value="Eti-Osa">Eti-Osa</SelectItem>
+                <SelectItem value="Alimosho">Alimosho</SelectItem>
+                <SelectItem value="Saki West">Saki West (Oyo)</SelectItem>
+                <SelectItem value="Agege">Agege (Lagos)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardContent>
     </>

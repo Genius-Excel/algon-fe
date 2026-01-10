@@ -8,7 +8,11 @@ import {
   validateEmail,
   validatePhone,
 } from "../../utils/validation";
-import { digitizationService, paymentService } from "../../services";
+import {
+  digitizationService,
+  paymentService,
+  applicationService,
+} from "../../services";
 import { useFileUploadEnhanced } from "../../hooks/useFileUploadEnhanced";
 
 export function DigitizationFlow() {
@@ -20,7 +24,9 @@ export function DigitizationFlow() {
   const [formData, setFormData] = useState<DigitizationFormData>({
     nin: "",
     email: "",
+    full_name: "",
     phone: "",
+    state: "",
     lga: "",
     certificateRef: "",
     profilePhoto: null,
@@ -65,14 +71,39 @@ export function DigitizationFlow() {
     setIsInitializingPayment(true);
 
     try {
-      const result = await paymentService.initializePayment({
-        email: formData.email,
+      // First, submit the digitization application to get application_id
+      const submitResult = await digitizationService.submitDigitization({
+        ...formData,
+        full_name: formData.full_name,
+        state: formData.state,
+        certificateFile: certificateUpload.file as File,
+      });
+
+      const applicationId = submitResult.data?.user_data?.id;
+      if (!applicationId) {
+        throw new Error("Failed to get application ID");
+      }
+
+      toast.success("Application submitted! Initiating payment...");
+
+      // Verify NIN information (non-blocking)
+      try {
+        const ninResult = await applicationService.verifyNIN(
+          applicationId,
+          "digitization"
+        );
+        if (ninResult.message.toLowerCase().includes("success")) {
+          console.log("NIN verified for digitization");
+        }
+      } catch (ninError: any) {
+        console.warn("NIN verification warning:", ninError);
+      }
+
+      // Now initiate payment with the application_id
+      const result = await applicationService.initiatePayment({
+        payment_type: "digitization",
+        application_id: applicationId,
         amount: DIGITIZATION_AMOUNT,
-        metadata: {
-          nin: formData.nin,
-          lga: formData.lga,
-          serviceType: "digitization",
-        },
       });
 
       if (result.status) {
@@ -88,11 +119,38 @@ export function DigitizationFlow() {
 
         setCurrentStep(4);
       } else {
-        toast.error("Failed to initialize payment");
+        toast.error(result.message || "Failed to initialize payment");
       }
     } catch (error: any) {
       console.error("Payment initialization error:", error);
-      toast.error("Failed to initialize payment. Please try again.");
+
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+
+      // Handle specific HTTP status codes per API spec
+      if (status === 400) {
+        toast.error(
+          errorData?.message ||
+            "Invalid payment request. Please check all fields."
+        );
+      } else if (status === 401) {
+        toast.error("Session expired. Please log in again.");
+        setTimeout(() => navigate("/login"), 1500);
+      } else if (status === 409) {
+        toast.error(
+          errorData?.message ||
+            "Payment already initiated or application not payable."
+        );
+      } else if (status >= 500) {
+        toast.error(
+          "Server error occurred. Please try again later or contact support."
+        );
+      } else {
+        toast.error(
+          errorData?.message ||
+            "Failed to initialize payment. Please try again."
+        );
+      }
     } finally {
       setIsInitializingPayment(false);
     }
@@ -101,6 +159,11 @@ export function DigitizationFlow() {
   const validateCurrentStep = (): boolean => {
     switch (currentStep) {
       case 1:
+        if (!formData.full_name || formData.full_name.trim().length < 3) {
+          toast.error("Please enter your full name (minimum 3 characters)");
+          return false;
+        }
+
         const ninValidation = validateNIN(formData.nin);
         if (!ninValidation.valid) {
           toast.error(ninValidation.message);
@@ -116,6 +179,11 @@ export function DigitizationFlow() {
         const phoneValidation = validatePhone(formData.phone);
         if (!phoneValidation.valid) {
           toast.error(phoneValidation.message);
+          return false;
+        }
+
+        if (!formData.state) {
+          toast.error("Please select your State");
           return false;
         }
 
@@ -185,36 +253,19 @@ export function DigitizationFlow() {
         return;
       }
 
-      toast.success("Payment verified!");
-
-      const result = await digitizationService.submitDigitization({
-        ...formData,
-        certificateFile: certificateUpload.file as File,
-        paymentReference,
-      });
-
-      console.log("Digitization submitted:", result);
-
-      toast.success("Digitization request submitted successfully!");
+      toast.success(
+        "Payment verified! Your digitization request has been submitted successfully."
+      );
 
       setTimeout(() => {
         navigate("/applicant-dashboard");
       }, 1500);
     } catch (error: any) {
-      console.error("Submission error:", error);
-
-      const errors = error.response?.data;
-
-      if (typeof errors === "object" && errors !== null) {
-        const firstError = Object.values(errors)[0];
-        if (Array.isArray(firstError)) {
-          toast.error(firstError[0]);
-        } else {
-          toast.error(errors.message || "Failed to submit request");
-        }
-      } else {
-        toast.error("Failed to submit request. Please try again.");
-      }
+      console.error("Payment verification error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to verify payment. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }

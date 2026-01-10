@@ -13,7 +13,9 @@ import {
 import { Logo, PageContainer } from "../../DesignSystem/designSyetem";
 
 interface RegisterFormData {
-  nin: string;
+  firstName: string;
+  lastName: string;
+  nin?: string; // Optional for super-admin
   email: string;
   phone: string;
   password: string;
@@ -54,22 +56,61 @@ export function SuperAdminRegisterDesign({
 
           <CardContent>
             <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    placeholder="John"
+                    value={formData.firstName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, firstName: e.target.value })
+                    }
+                    className="rounded-lg"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    placeholder="Doe"
+                    value={formData.lastName}
+                    onChange={(e) =>
+                      setFormData({ ...formData, lastName: e.target.value })
+                    }
+                    className="rounded-lg"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="nin">
-                  National Identification Number (NIN)
+                  National Identification Number (NIN){" "}
+                  <span className="text-muted-foreground">(Optional)</span>
                 </Label>
                 <Input
                   id="nin"
                   type="text"
-                  placeholder="Enter your 11-digit NIN"
-                  value={formData.nin}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nin: e.target.value })
-                  }
+                  placeholder="Enter your 11-digit NIN (optional)"
+                  value={formData.nin || ""}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+                    setFormData({ ...formData, nin: value });
+                  }}
                   className="rounded-lg"
                   maxLength={11}
                   disabled={isLoading}
                 />
+                <p className="text-xs text-muted-foreground">
+                  If provided, must be exactly 11 digits
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -92,14 +133,20 @@ export function SuperAdminRegisterDesign({
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="080XXXXXXXX"
+                  placeholder="07099494949"
                   value={formData.phone}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone: e.target.value })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+                    setFormData({ ...formData, phone: value });
+                  }}
                   className="rounded-lg"
+                  maxLength={11}
                   disabled={isLoading}
+                  required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Enter 11 digits (e.g., 07099494949)
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -114,7 +161,12 @@ export function SuperAdminRegisterDesign({
                   }
                   className="rounded-lg"
                   disabled={isLoading}
+                  required
                 />
+                <p className="text-xs text-muted-foreground">
+                  Must include uppercase, lowercase, numbers, and special
+                  characters (@$!%*?&#)
+                </p>
               </div>
 
               <div className="space-y-2">

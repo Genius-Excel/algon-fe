@@ -71,8 +71,37 @@ export function ApplicantDashboard() {
       setApplications(transformedApplications);
     } catch (error: any) {
       console.error("Failed to load applications:", error);
-      const errorMessage =
-        error.response?.data?.message || "Failed to load applications";
+
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      let errorMessage = "Failed to load applications. Please try again.";
+
+      // Handle specific error status codes based on API documentation
+      if (status === 401) {
+        // Unauthorized: Missing/invalid/expired token
+        errorMessage = "Session expired. Please login again.";
+        setError(errorMessage);
+        toast.error(errorMessage);
+        setTimeout(() => {
+          logout();
+          navigate("/login");
+        }, 2000);
+        return;
+      } else if (status === 403) {
+        // Forbidden: Valid token but lacks required scope/role
+        errorMessage = "You do not have permission to view applications.";
+      } else if (status === 429) {
+        // Too Many Requests: Rate limit
+        errorMessage = "Too many requests. Please wait a moment and try again.";
+      } else if (status >= 500) {
+        // 5xx Server Errors
+        errorMessage = "Server error. Please try again later.";
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {

@@ -2,11 +2,15 @@ import apiClient from "./api";
 import type { DigitizationFormData } from "../Types/types";
 import { mockDigitizationService } from "./mock.service"; // ✅ Import correct mock
 
-const USE_MOCK = true; // API integration enabled
+const USE_MOCK = false; // API integration enabled
 
 class DigitizationService {
   async submitDigitization(
-    data: DigitizationFormData & { certificateFile?: File }
+    data: DigitizationFormData & {
+      certificateFile?: File;
+      full_name: string;
+      state: string;
+    }
   ) {
     if (USE_MOCK) {
       return mockDigitizationService.submitDigitization(data); // ✅ Use correct mock
@@ -14,25 +18,35 @@ class DigitizationService {
 
     const formData = new FormData();
 
-    Object.keys(data).forEach((key) => {
-      const typedKey = key as keyof typeof data;
-      const value = data[typedKey];
+    // Required text fields per API spec
+    formData.append("nin", data.nin);
+    formData.append("email", data.email);
+    formData.append("full_name", data.full_name);
+    formData.append("state", data.state);
+    formData.append("local_government", data.lga);
+    formData.append("phone_number", data.phone);
+    formData.append("certificate_reference_number", data.certificateRef);
 
-      if (typedKey === "profilePhoto" && value) {
-        formData.append("profile_photo", value as File);
-      } else if (typedKey === "ninSlip" && value) {
-        formData.append("nin_slip", value as File);
-      } else if (typedKey === "certificateFile" && value) {
-        formData.append("certificate_file", value as File);
-      } else if (
-        value !== null &&
-        !["profilePhoto", "ninSlip", "certificateFile"].includes(typedKey)
-      ) {
-        formData.append(typedKey, value as string);
+    // Optional file fields
+    if (data.profilePhoto) {
+      formData.append("profile_photo", data.profilePhoto);
+    }
+    if (data.ninSlip) {
+      formData.append("nin_slip", data.ninSlip);
+    }
+    if (data.certificateFile) {
+      formData.append("uploaded_certificate", data.certificateFile);
+    }
+
+    const response = await apiClient.post(
+      "/certificate/digitizations/apply",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
-    });
-
-    const response = await apiClient.post("/digitization/requests/", formData);
+    );
     return response.data;
   }
 

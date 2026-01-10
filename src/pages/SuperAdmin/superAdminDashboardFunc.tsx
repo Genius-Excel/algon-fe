@@ -1,11 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { SuperAdminDashboardDesign } from "./superAdminDashboardDesign";
-import type {
-  LocalGovernment,
-  AuditLogEntry,
-  MonthlyData,
-} from "../../Types/types";
+import type { LocalGovernment, AuditLog, MonthlyData } from "../../Types/types";
 import { adminService } from "../../services";
 import { toast } from "sonner";
 import { tokenManager } from "../../utils/tokenManager";
@@ -21,7 +17,15 @@ export function SuperAdminDashboard() {
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [monthlyRevenueData, setMonthlyRevenueData] = useState<any[]>([]);
   const [lgas, setLgas] = useState<LocalGovernment[]>([]);
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [auditLog, setAuditLog] = useState<AuditLog[]>([]);
+  const [auditLogPage, setAuditLogPage] = useState(1);
+  const [auditLogPageSize, setAuditLogPageSize] = useState(50);
+  const [auditLogTotalCount, setAuditLogTotalCount] = useState(0);
+  const [auditLogFilters, setAuditLogFilters] = useState<{
+    action_type?: string;
+    table_name?: string;
+    user?: string;
+  }>({});
   const [isLoading, setIsLoading] = useState(true);
 
   // ✅ Load data on mount and tab change
@@ -42,30 +46,80 @@ export function SuperAdminDashboard() {
           setLgas(response.data || []);
         } catch (lgaError: any) {
           console.error("Local governments error:", lgaError);
-          if (lgaError.response?.status === 404) {
-            console.warn("Local governments endpoint not available yet");
-            setLgas([]);
+
+          // Handle structured errors from the service
+          if (lgaError.message) {
+            if (lgaError.message.includes("Authentication failed")) {
+              toast.error("Session expired. Please log in again.");
+              navigate("/login");
+              return;
+            } else if (lgaError.message.includes("Access denied")) {
+              toast.error(
+                "You do not have permission to view local governments."
+              );
+            } else if (lgaError.message.includes("Too many requests")) {
+              toast.error("Too many requests. Please wait a moment.");
+            } else if (lgaError.message.includes("Server error")) {
+              toast.error("Server error. Please try again later.");
+            } else {
+              toast.error(lgaError.message);
+            }
           } else {
-            throw lgaError;
+            toast.error("Failed to load local governments");
           }
+          setLgas([]);
         }
       } else if (activeTab === "audit") {
-        // Load audit logs
+        // Load audit logs with pagination and filters
         try {
           const data = await adminService.getAuditLogs({
-            page: 1,
-            page_size: 50,
+            page: auditLogPage,
+            page_size: auditLogPageSize,
+            ...auditLogFilters,
           });
           console.log("📋 Audit logs response:", data);
-          setAuditLog(data.data?.results || data.results || []);
+
+          // Handle both response structures
+          const results = data.data?.results || data.results || [];
+          const count = data.data?.count || data.count || 0;
+
+          setAuditLog(results);
+          setAuditLogTotalCount(count);
         } catch (auditError: any) {
           console.error("Audit logs error:", auditError);
-          if (auditError.response?.status === 404) {
+
+          const status = auditError.response?.status;
+          const errorData = auditError.response?.data;
+
+          // Handle specific HTTP status codes per API spec
+          if (status === 400) {
+            toast.error(
+              errorData?.message || "Invalid query parameters for audit logs"
+            );
+          } else if (status === 401) {
+            toast.error("Session expired. Please log in again.");
+            setTimeout(() => navigate("/login"), 1500);
+            return;
+          } else if (status === 403) {
+            toast.error(
+              "You are not authorized to access audit logs. Super admin access required."
+            );
+          } else if (status === 404) {
             console.warn("Audit logs endpoint not available yet");
             setAuditLog([]);
+          } else if (status === 429) {
+            toast.error(
+              "Too many requests. Please wait a moment before trying again."
+            );
+          } else if (status >= 500) {
+            toast.error(
+              "Server error occurred while loading audit logs. Please try again later."
+            );
           } else {
-            throw auditError;
+            toast.error(errorData?.message || "Failed to load audit logs");
           }
+
+          setAuditLog([]);
         }
       } else if (activeTab === "dashboard") {
         const response = await adminService.getSuperAdminDashboard();
@@ -150,21 +204,19 @@ export function SuperAdminDashboard() {
       }
     } catch (error: any) {
       console.error("Failed to load data:", error);
-      console.error("Error response:", error.response);
 
-      // Check if we got HTML instead of JSON (auth error)
-      if (
-        typeof error.response?.data === "string" &&
-        error.response.data.includes("<!DOCTYPE html>")
-      ) {
-        toast.error("Authentication failed. Please login again.");
+      // Handle specific error cases
+      if (error.message?.includes("Authentication failed")) {
+        toast.error("Session expired. Please log in again.");
         navigate("/login");
+      } else if (error.message?.includes("Access denied")) {
+        toast.error("You do not have permission to access this dashboard.");
+      } else if (error.message?.includes("Too many requests")) {
+        toast.error("Too many requests. Please wait a moment and try again.");
+      } else if (error.message?.includes("Server error")) {
+        toast.error("Server error. Please try again later.");
       } else {
-        toast.error(
-          `Failed to load data: ${
-            error.response?.data?.message || error.message
-          }`
-        );
+        toast.error(error.message || "Failed to load dashboard data");
       }
     } finally {
       setIsLoading(false);
@@ -192,6 +244,27 @@ export function SuperAdminDashboard() {
       },
     });
   };
+
+  const handleAuditLogPageChange = (page: number) => {
+    setAuditLogPage(page);
+    // Re-fetch will happen via useEffect when page changes
+  };
+
+  const handleAuditLogFiltersChange = (filters: {
+    action_type?: string;
+    table_name?: string;
+    user?: string;
+  }) => {
+    setAuditLogFilters(filters);
+    setAuditLogPage(1); // Reset to page 1 when filters change
+  };
+
+  // Re-fetch audit logs when page or filters change
+  useEffect(() => {
+    if (activeTab === "audit") {
+      loadData();
+    }
+  }, [auditLogPage, auditLogFilters]);
 
   // Show loading
   if (
@@ -224,6 +297,12 @@ export function SuperAdminDashboard() {
       lgas={lgas}
       filteredLGAs={filteredLGAs}
       auditLog={auditLog}
+      auditLogPage={auditLogPage}
+      auditLogPageSize={auditLogPageSize}
+      auditLogTotalCount={auditLogTotalCount}
+      auditLogFilters={auditLogFilters}
+      onAuditLogPageChange={handleAuditLogPageChange}
+      onAuditLogFiltersChange={handleAuditLogFiltersChange}
       handleLogout={handleLogout}
       onNavigate={(page: string) => navigate(`/${page}`)}
     />

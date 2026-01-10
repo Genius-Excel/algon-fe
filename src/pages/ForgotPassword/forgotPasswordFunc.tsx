@@ -14,7 +14,7 @@ export function ForgotPassword() {
       return;
     }
 
-    // Basic email validation
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Please enter a valid email address");
@@ -26,16 +26,36 @@ export function ForgotPassword() {
     try {
       const response = await authService.sendPasswordResetEmail(email, "web");
 
+      // Display success message from API
       toast.success(response.message || "Password reset email sent!");
+
+      // Show success state
       setEmailSent(true);
     } catch (error: any) {
       console.error("Password reset error:", error);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Failed to send reset email. Please try again.";
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      let errorMessage = "Failed to send reset email. Please try again.";
+
+      // Handle specific error status codes based on API documentation
+      if (status === 400) {
+        errorMessage =
+          errorData?.message ||
+          "Invalid email address or missing required fields.";
+      } else if (status === 404) {
+        errorMessage = "Email address not found. Please check and try again.";
+      } else if (status === 429) {
+        errorMessage = "Too many reset attempts. Please try again later.";
+      } else if (status === 500) {
+        errorMessage = "Server error. Please try again in a few moments.";
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (errorData?.error) {
+        errorMessage = errorData.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
 
       toast.error(errorMessage);
     } finally {

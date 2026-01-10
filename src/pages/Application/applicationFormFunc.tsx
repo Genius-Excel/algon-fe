@@ -163,13 +163,30 @@ export function ApplicationForm() {
 
       // Verify NIN information (non-blocking)
       try {
-        await applicationService.verifyNIN(appId, "certificate");
-        toast.success("NIN verified successfully!");
+        const ninResult = await applicationService.verifyNIN(
+          appId,
+          "certificate"
+        );
+        if (ninResult.message.toLowerCase().includes("success")) {
+          toast.success("NIN verified successfully!");
+        } else {
+          toast.warning(ninResult.message || "NIN verification pending");
+        }
       } catch (ninError: any) {
         console.warn("NIN verification warning:", ninError);
-        toast.warning(
-          ninError.response?.data?.message || "NIN verification pending"
-        );
+        const status = ninError.response?.status;
+        const errorMessage = ninError.response?.data?.message;
+
+        // Handle specific error codes per API spec
+        if (status === 400) {
+          toast.warning(errorMessage || "Invalid verification request");
+        } else if (status === 401 || status === 403) {
+          toast.error("Authentication failed. Please log in again.");
+        } else if (status === 404) {
+          toast.warning("Application not found for NIN verification");
+        } else {
+          toast.warning(errorMessage || "NIN verification pending");
+        }
       }
 
       // Step 3: Initialize payment
@@ -208,24 +225,84 @@ export function ApplicationForm() {
       }
     } catch (error: any) {
       console.error("Application submission error:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        "Failed to submit application";
 
-      // Handle validation errors from backend
-      if (error.response?.data?.error) {
-        const errorObj = error.response.data.error;
-        const errorMessages = Object.entries(errorObj)
-          .map(([field, messages]) => {
-            const msgArray = Array.isArray(messages) ? messages : [messages];
-            return `${field}: ${msgArray.join(", ")}`;
-          })
-          .join("; ");
-        toast.error(errorMessages);
-      } else {
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      let errorMessage = "Failed to submit application. Please try again.";
+
+      // Handle specific error status codes based on API documentation
+      if (status === 400) {
+        // Bad Request: Validation errors
+        if (errorData?.error) {
+          const errorObj = errorData.error;
+          const errorMessages = Object.entries(errorObj)
+            .map(([field, messages]) => {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${msgArray.join(", ")}`;
+            })
+            .join("; ");
+          errorMessage = errorMessages;
+        } else {
+          errorMessage =
+            errorData?.message ||
+            "Invalid form data. Please check your inputs.";
+        }
+      } else if (status === 401) {
+        // Unauthorized: Invalid or missing token
+        errorMessage = "Session expired. Please login again.";
         toast.error(errorMessage);
+        setTimeout(() => navigate("/login"), 2000);
+        return;
+      } else if (status === 403) {
+        // Forbidden: Not permitted to apply
+        errorMessage = "You do not have permission to submit applications.";
+      } else if (status === 409) {
+        // Conflict: Duplicate application
+        errorMessage =
+          "An application with this NIN and email already exists. Please check your previous applications.";
+      } else if (status === 422) {
+        // Unprocessable Entity: Validation errors
+        if (errorData?.error) {
+          const errorObj = errorData.error;
+          const errorMessages = Object.entries(errorObj)
+            .map(([field, messages]) => {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${msgArray.join(", ")}`;
+            })
+            .join("; ");
+          errorMessage = errorMessages;
+        } else {
+          errorMessage =
+            errorData?.message ||
+            "Validation failed. Please review your information.";
+        }
+      } else if (status === 429) {
+        // Too Many Requests: Rate limit
+        errorMessage = "Too many application attempts. Please try again later.";
+      } else if (status === 500) {
+        // Internal Server Error
+        errorMessage = "Server error. Please try again in a few moments.";
+      } else if (errorData?.error) {
+        // Generic error object handling
+        const errorObj = errorData.error;
+        if (typeof errorObj === "string") {
+          errorMessage = errorObj;
+        } else {
+          const errorMessages = Object.entries(errorObj)
+            .map(([field, messages]) => {
+              const msgArray = Array.isArray(messages) ? messages : [messages];
+              return `${field}: ${msgArray.join(", ")}`;
+            })
+            .join("; ");
+          errorMessage = errorMessages;
+        }
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+
+      toast.error(errorMessage);
     } finally {
       setIsInitializingPayment(false);
     }

@@ -42,18 +42,38 @@ export function Register() {
       return;
     }
 
+    // Validate password match
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
 
-    if (formData.nin.length !== 11) {
-      toast.error("NIN must be 11 digits");
+    // Validate NIN format (must be 11 digits)
+    if (formData.nin.length !== 11 || !/^\d{11}$/.test(formData.nin)) {
+      toast.error("NIN must be exactly 11 digits");
       return;
     }
 
-    if (formData.password.length < 8) {
-      toast.error("Password must be at least 8 characters");
+    // Validate phone number format (must be 11 digits)
+    if (formData.phone.length !== 11 || !/^\d{11}$/.test(formData.phone)) {
+      toast.error("Phone number must be exactly 11 digits (e.g., 09085561218)");
+      return;
+    }
+
+    // Validate password complexity
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(formData.password)) {
+      toast.error(
+        "Password must be at least 8 characters and include uppercase, lowercase, numbers, and special characters"
+      );
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -80,18 +100,36 @@ export function Register() {
     } catch (error: any) {
       console.error("Registration error:", error);
 
-      // ✅ Handle specific validation errors from backend
-      const errors = error.response?.data;
+      // ✅ Handle specific error messages from backend
+      const errorMessage =
+        error.message ||
+        error.response?.data?.error ||
+        error.response?.data?.message;
 
-      if (errors?.nin) {
-        toast.error(`NIN: ${errors.nin[0]}`);
-      } else if (errors?.email) {
-        toast.error(`Email: ${errors.email[0]}`);
-      } else if (errors?.phone) {
-        toast.error(`Phone: ${errors.phone[0]}`);
+      if (errorMessage) {
+        toast.error(errorMessage);
+      } else if (error.response?.data) {
+        // Handle field-specific validation errors
+        const errors = error.response.data;
+
+        if (errors?.nin) {
+          toast.error(`NIN: ${errors.nin[0]}`);
+        } else if (errors?.email) {
+          toast.error(`Email: ${errors.email[0]}`);
+        } else if (errors?.phone_number) {
+          toast.error(`Phone: ${errors.phone_number[0]}`);
+        } else if (errors?.first_name) {
+          toast.error(`First Name: ${errors.first_name[0]}`);
+        } else if (errors?.last_name) {
+          toast.error(`Last Name: ${errors.last_name[0]}`);
+        } else if (errors?.password) {
+          toast.error(`Password: ${errors.password[0]}`);
+        } else {
+          toast.error("Registration failed. Please try again.");
+        }
       } else {
         toast.error(
-          errors?.message || "Registration failed. Please try again."
+          "Registration failed. Please check your connection and try again."
         );
       }
     } finally {

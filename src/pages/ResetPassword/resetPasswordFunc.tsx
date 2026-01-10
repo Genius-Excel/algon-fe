@@ -83,45 +83,65 @@ export function ResetPassword() {
     } catch (error: any) {
       console.error("Password reset error:", error);
 
+      const status = error.response?.status;
       const errorData = error.response?.data;
+      let errorMessage = "Failed to reset password. Please try again.";
 
-      // Handle specific field errors
-      if (errorData?.email) {
-        toast.error(
-          `Email: ${
+      // Handle specific error status codes based on API documentation
+      if (status === 400) {
+        // Validation error - check for field-specific errors
+        if (errorData?.email) {
+          errorMessage = `Email: ${
             Array.isArray(errorData.email)
               ? errorData.email[0]
               : errorData.email
-          }`
-        );
-      } else if (errorData?.password1) {
-        toast.error(
-          `Password: ${
+          }`;
+        } else if (errorData?.password1) {
+          errorMessage = `Password: ${
             Array.isArray(errorData.password1)
               ? errorData.password1[0]
               : errorData.password1
-          }`
-        );
-      } else if (errorData?.password2) {
-        toast.error(
-          `Confirm Password: ${
+          }`;
+        } else if (errorData?.password2) {
+          errorMessage = `Confirm Password: ${
             Array.isArray(errorData.password2)
               ? errorData.password2[0]
               : errorData.password2
-          }`
-        );
-      } else if (errorData?.token || error.response?.status === 401) {
-        toast.error(
-          "Invalid or expired reset token. Please request a new password reset."
-        );
+          }`;
+        } else {
+          errorMessage =
+            errorData?.message || "Validation error. Please check your input.";
+        }
+      } else if (status === 401) {
+        // Invalid or expired token
+        errorMessage =
+          "Invalid or expired reset token. Please request a new password reset.";
+        toast.error(errorMessage);
         setTimeout(() => navigate("/forgot-password"), 2000);
-      } else {
-        toast.error(
-          errorData?.message ||
-            error.message ||
-            "Failed to reset password. Please try again."
-        );
+        return;
+      } else if (status === 404) {
+        // Email not found
+        errorMessage = "Email address not found. Please check and try again.";
+      } else if (status === 429) {
+        // Rate limited
+        errorMessage = "Too many reset attempts. Please try again later.";
+      } else if (status === 500) {
+        // Server error
+        errorMessage = "Server error. Please try again in a few moments.";
+      } else if (errorData?.token) {
+        // Token-specific error
+        errorMessage =
+          "Invalid or expired reset token. Please request a new password reset.";
+        toast.error(errorMessage);
+        setTimeout(() => navigate("/forgot-password"), 2000);
+        return;
+      } else if (errorData?.message) {
+        errorMessage = errorData.message;
+      } else if (error.message) {
+        errorMessage = error.message;
       }
+
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

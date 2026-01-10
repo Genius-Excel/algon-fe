@@ -12,6 +12,7 @@ import { LGAdminDashboard } from "./pages/LGADashboard/lgAdminDashboardFunc";
 import { SuperAdminDashboard } from "./pages/SuperAdmin/superAdminDashboardFunc";
 import { DigitizationFlow } from "./pages/Digitalization/digitizationFunc";
 import { AdminOnboarding } from "./pages/Admin/adminOnboardFunc";
+import { VerifyInvite } from "./pages/VerifyInvite/verifyInviteFunc";
 import { Toaster } from "./components/ui/sonner";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify" element={<CertificateVerification />} />
+          <Route path="/verify-invite/:token" element={<VerifyInvite />} />
 
           {/* Applicant Routes */}
           <Route
