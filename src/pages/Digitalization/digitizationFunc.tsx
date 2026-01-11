@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DigitizationFlowDesign } from "./digitizationDesign";
 import { toast } from "sonner";
-import type { DigitizationFormData } from "../../Types/types";
+import type { DigitizationFormData, StateWithLGAs } from "../../Types/types";
 import {
   validateNIN,
   validateEmail,
@@ -12,6 +12,7 @@ import {
   digitizationService,
   paymentService,
   applicationService,
+  adminService,
 } from "../../services";
 import { useFileUploadEnhanced } from "../../hooks/useFileUploadEnhanced";
 
@@ -20,6 +21,11 @@ export function DigitizationFlow() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
   const progress = (currentStep / totalSteps) * 100;
+
+  // States and LGAs
+  const [states, setStates] = useState<StateWithLGAs[]>([]);
+  const [availableLGAs, setAvailableLGAs] = useState<any[]>([]);
+  const [loadingStates, setLoadingStates] = useState(false);
 
   const [formData, setFormData] = useState<DigitizationFormData>({
     nin: "",
@@ -36,27 +42,100 @@ export function DigitizationFlow() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isInitializingPayment, setIsInitializingPayment] = useState(false);
   const [paymentReference, setPaymentReference] = useState<string>("");
+  const [digitizationAmount, setDigitizationAmount] = useState<number>(0);
 
-  // Fixed amount for digitization
-  const DIGITIZATION_AMOUNT = 2300;
+  // Load states on mount
+  useEffect(() => {
+    loadStates();
+  }, []);
+
+  // Update available LGAs when state changes
+  useEffect(() => {
+    if (formData.state) {
+      const selectedState = states.find((s) => s.id === formData.state);
+      setAvailableLGAs(selectedState?.local_governtments || []);
+    } else {
+      setAvailableLGAs([]);
+    }
+  }, [formData.state, states]);
+
+  // Fetch fee when user reaches payment step (step 3)
+  useEffect(() => {
+    const fetchFee = async () => {
+      if (currentStep === 3 && formData.lga && digitizationAmount === 0) {
+        try {
+          // Get selected LGA details
+          const selectedState = states.find((s) => s.id === formData.state);
+          const selectedLga = selectedState?.local_governtments?.find(
+            (l: any) => l.id === formData.lga
+          );
+
+          if (selectedLga) {
+            // Fetch fee from backend using LGA ID
+            const response = await adminService.getAllLGAs({
+              state: selectedState?.name,
+            });
+
+            const lgaData = response.data?.find(
+              (lga: any) => lga.id === formData.lga
+            );
+
+            // Extract fee from LGA data if available
+            const feeData = lgaData?.fee || lgaData?.fees;
+            if (feeData?.digitization_fee) {
+              const fee =
+                typeof feeData.digitization_fee === "string"
+                  ? parseFloat(feeData.digitization_fee)
+                  : feeData.digitization_fee;
+              setDigitizationAmount(fee);
+              console.log("Fee loaded for payment step:", fee, "NGN");
+            }
+          }
+        } catch (error) {
+          console.warn("Could not pre-fetch fee:", error);
+          // Non-critical error - fee will be fetched during payment initiation
+        }
+      }
+    };
+
+    fetchFee();
+  }, [currentStep, formData.lga, formData.state, states, digitizationAmount]);
+
+  const loadStates = async () => {
+    setLoadingStates(true);
+    try {
+      const response = await adminService.getAllStatesAndLGs();
+      // Handle paginated response: { data: { count, results: [...] } }
+      const statesData = Array.isArray(response)
+        ? response
+        : response?.data?.results || response?.data || [];
+
+      setStates(statesData);
+    } catch (error: any) {
+      console.error("Failed to load states:", error);
+      toast.error("Failed to load states. Please refresh the page.");
+    } finally {
+      setLoadingStates(false);
+    }
+  };
 
   // File upload hooks
   const profilePhoto = useFileUploadEnhanced({
-    maxSizeMB: 2,
+    maxSizeMB: 1,
     allowedTypes: ["image/jpeg", "image/png"],
     compressImages: true,
     onUpload: (file) => setFormData({ ...formData, profilePhoto: file }),
   });
 
   const ninSlip = useFileUploadEnhanced({
-    maxSizeMB: 5,
+    maxSizeMB: 2,
     allowedTypes: ["image/jpeg", "image/png", "application/pdf"],
     compressImages: true,
     onUpload: (file) => setFormData({ ...formData, ninSlip: file }),
   });
 
   const certificateUpload = useFileUploadEnhanced({
-    maxSizeMB: 5,
+    maxSizeMB: 3,
     allowedTypes: ["image/jpeg", "image/png", "application/pdf"],
     compressImages: true,
     onUpload: (file) => {
@@ -71,17 +150,78 @@ export function DigitizationFlow() {
     setIsInitializingPayment(true);
 
     try {
+      // Validate total file size before submission
+      const totalFileSize =
+        (profilePhoto.file?.size || 0) +
+        (ninSlip.file?.size || 0) +
+        (certificateUpload.file?.size || 0);
+      const totalSizeMB = totalFileSize / (1024 * 1024);
+
+      if (totalSizeMB > 6) {
+        toast.error(
+          `Total file size (${totalSizeMB.toFixed(
+            2
+          )}MB) exceeds 6MB limit. Please compress or reduce file sizes.`
+        );
+        setIsInitializingPayment(false);
+        return;
+      }
+
+      // Get selected state and LGA names
+      const selectedState = states.find((s) => s.id === formData.state);
+      const lgasForState = selectedState?.local_governtments || [];
+      const selectedLga = lgasForState.find((l: any) => l.id === formData.lga);
+
+      if (!selectedState || !selectedLga) {
+        toast.error("Please select a valid State and Local Government");
+        setIsInitializingPayment(false);
+        return;
+      }
+
+      const stateName = selectedState.name;
+      const lgaName = selectedLga.name;
+      const lgaId = selectedLga.id;
+
+      console.log("Submitting digitization with:", {
+        state: stateName,
+        lga: lgaName,
+        local_government_id: lgaId,
+      });
+
       // First, submit the digitization application to get application_id
       const submitResult = await digitizationService.submitDigitization({
         ...formData,
         full_name: formData.full_name,
-        state: formData.state,
+        state: stateName,
+        lga: lgaName,
+        local_government_id: lgaId,
         certificateFile: certificateUpload.file as File,
       });
 
-      const applicationId = submitResult.data?.user_data?.id;
+      // Extract application ID from response - handle various backend shapes
+      const responseData = submitResult?.data ?? submitResult;
+      const applicationId =
+        // Common shape: data.user_data.id
+        responseData?.user_data?.id ??
+        // Direct id on data
+        responseData?.id ??
+        // Nested: data.data.id
+        (responseData as any)?.data?.id ??
+        // Fallbacks from original object
+        submitResult?.data?.user_data?.id ??
+        (submitResult as any)?.data?.data?.id;
+
+      console.log("Digitization submit response structure:", responseData);
+      console.log("Extracted applicationId:", applicationId);
+
       if (!applicationId) {
-        throw new Error("Failed to get application ID");
+        console.error("Submit result structure:", submitResult);
+        console.error("Response data:", responseData);
+        toast.error(
+          "Application submitted but couldn't retrieve application ID. Please check console or contact support."
+        );
+        setIsInitializingPayment(false);
+        return;
       }
 
       toast.success("Application submitted! Initiating payment...");
@@ -93,31 +233,54 @@ export function DigitizationFlow() {
           "digitization"
         );
         if (ninResult.message.toLowerCase().includes("success")) {
-          console.log("NIN verified for digitization");
         }
       } catch (ninError: any) {
         console.warn("NIN verification warning:", ninError);
       }
 
-      // Now initiate payment with the application_id
+      // Extract digitization fee from response (backend returns fee based on local government)
+      const digitizationFee =
+        submitResult.data?.fee?.digitization_fee ||
+        submitResult.data?.digitization_fee ||
+        0;
+
+      const feeAmount =
+        typeof digitizationFee === "string"
+          ? parseFloat(digitizationFee)
+          : digitizationFee;
+
+      console.log("Digitization fee extracted:", feeAmount, "NGN");
+      setDigitizationAmount(feeAmount);
+
+      // Now initiate payment with the application_id (amount determined by backend from local government)
       const result = await applicationService.initiatePayment({
         payment_type: "digitization",
         application_id: applicationId,
-        amount: DIGITIZATION_AMOUNT,
       });
 
       if (result.status) {
         setPaymentReference(result.data.reference);
 
-        window.open(
-          result.data.authorization_url,
-          "Paystack Payment",
-          "width=500,height=700,left=200,top=100"
-        );
+        // Use Paystack inline popup modal
+        const handler = (window as any).PaystackPop.setup({
+          key: result.data.public_key || "pk_test_xxxx", // Use public key from response or fallback
+          email: formData.email,
+          amount: (digitizationAmount + 500) * 100, // Convert to kobo (NGN minor unit)
+          ref: result.data.reference,
+          callback: function (response: any) {
+            toast.success(
+              "Payment successful! Reference: " + response.reference
+            );
+            setCurrentStep(4);
+          },
+          onClose: function () {
+            toast.info(
+              "Payment window closed. You can retry payment if needed."
+            );
+          },
+        });
 
-        toast.success("Payment window opened! Complete payment to continue.");
-
-        setCurrentStep(4);
+        handler.openIframe();
       } else {
         toast.error(result.message || "Failed to initialize payment");
       }
@@ -128,7 +291,11 @@ export function DigitizationFlow() {
       const errorData = error.response?.data;
 
       // Handle specific HTTP status codes per API spec
-      if (status === 400) {
+      if (status === 413) {
+        toast.error(
+          "File size too large. Please reduce file sizes and try again. Total size must be under 6MB."
+        );
+      } else if (status === 400) {
         toast.error(
           errorData?.message ||
             "Invalid payment request. Please check all fields."
@@ -282,6 +449,9 @@ export function DigitizationFlow() {
       progress={progress}
       formData={formData}
       setFormData={setFormData}
+      states={states}
+      availableLGAs={availableLGAs}
+      loadingStates={loadingStates}
       photoPreview={profilePhoto.preview}
       photoFile={profilePhoto.file}
       photoUploading={profilePhoto.isUploading}
@@ -312,7 +482,7 @@ export function DigitizationFlow() {
         if (file) certificateUpload.handleUpload(file);
       }}
       removeCertificate={() => certificateUpload.remove("certificate-upload")}
-      digitizationAmount={DIGITIZATION_AMOUNT}
+      digitizationAmount={digitizationAmount}
       paymentReference={paymentReference}
       isInitializingPayment={isInitializingPayment}
       handleProceedToPayment={handleProceedToPayment}

@@ -41,7 +41,13 @@ export function SuperAdminDashboard() {
         // Load local governments
         try {
           const response = await adminService.getAllLGAs();
-          console.log("🏛️ Local governments response:", response);
+          console.log("LGAs API Response:", response);
+          console.log("Total LGAs loaded:", response.data?.length);
+          console.log("Sample LGA (first item):", response.data?.[0]);
+          console.log(
+            "LGAs with assigned admins:",
+            response.data?.filter((lga: any) => lga.assigned_admin).length
+          );
           // API returns { message: "...", data: [...] }
           setLgas(response.data || []);
         } catch (lgaError: any) {
@@ -77,7 +83,6 @@ export function SuperAdminDashboard() {
             page_size: auditLogPageSize,
             ...auditLogFilters,
           });
-          console.log("📋 Audit logs response:", data);
 
           // Handle both response structures
           const results = data.data?.results || data.results || [];
@@ -124,8 +129,6 @@ export function SuperAdminDashboard() {
       } else if (activeTab === "dashboard") {
         const response = await adminService.getSuperAdminDashboard();
 
-        console.log("Super Admin Dashboard (full response):", response);
-
         // Check if response is HTML (backend doesn't support JWT authentication)
         if (
           typeof response === "string" &&
@@ -146,7 +149,7 @@ export function SuperAdminDashboard() {
         }
 
         // Handle both response structures: with or without 'data' wrapper
-        const dashboardData = response.data || response;
+        let dashboardData = response.data || response;
 
         // Check again if dashboardData is HTML
         if (
@@ -167,13 +170,7 @@ export function SuperAdminDashboard() {
           return;
         }
 
-        console.log("Extracted dashboard data:", dashboardData);
-        console.log("metric_cards:", dashboardData.metric_cards);
-        console.log(
-          "monthly_applications:",
-          dashboardData.monthly_applications
-        );
-        console.log("monthly_revenue:", dashboardData.monthly_revenue);
+        dashboardData = response?.data || response;
 
         // Store the full dashboard stats
         setDashboardStats(dashboardData);
@@ -187,7 +184,6 @@ export function SuperAdminDashboard() {
             applications: item.total,
           })) || [];
 
-        console.log("Mapped applications data:", applications);
         setMonthlyData(applications);
 
         // Map monthly revenue for chart
@@ -199,7 +195,6 @@ export function SuperAdminDashboard() {
             revenue: item.total || 0,
           })) || [];
 
-        console.log("Mapped revenue data:", revenue);
         setMonthlyRevenueData(revenue);
       }
     } catch (error: any) {
@@ -305,6 +300,7 @@ export function SuperAdminDashboard() {
       onAuditLogFiltersChange={handleAuditLogFiltersChange}
       handleLogout={handleLogout}
       onNavigate={(page: string) => navigate(`/${page}`)}
+      onReloadLGAs={loadData}
     />
   );
 }

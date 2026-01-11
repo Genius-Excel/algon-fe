@@ -61,9 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authService.login({ email, password });
 
-      console.log("✅ Auth Response:", response);
-      console.log("👤 User Role:", response.user.role);
-
       tokenManager.setAccessToken(response.access);
       tokenManager.setRefreshToken(response.refresh);
       tokenManager.setUserData(response.user); // ✅ Store user data
@@ -80,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         targetPath = "/lg-admin-dashboard";
       }
 
-      console.log("🚀 Navigating to:", targetPath);
       navigate(targetPath);
     } catch (err: any) {
       console.error("❌ Login error:", err);

@@ -63,7 +63,6 @@ export function ApplicationForm() {
         ? response
         : response?.data?.results || response?.data || [];
 
-      console.log("Loaded states:", statesData.length, "states");
       setStates(statesData);
     } catch (error: any) {
       console.error("Failed to load states:", error);
@@ -189,11 +188,10 @@ export function ApplicationForm() {
         }
       }
 
-      // Step 3: Initialize payment
+      // Step 3: Initialize payment (backend determines amount from application's local government)
       const result = await applicationService.initiatePayment({
         payment_type: "certificate",
         application_id: appId,
-        amount: fee > 0 ? fee : undefined,
       });
 
       if (result.status) {

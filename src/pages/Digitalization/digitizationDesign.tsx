@@ -1,4 +1,3 @@
-// src/pages/Digitization/digitizationFlowDesign.tsx
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -41,7 +40,7 @@ import {
   StepProgress,
   PageContainer,
 } from "../../DesignSystem/designSyetem";
-import type { DigitizationFormData } from "../../Types/types";
+import type { DigitizationFormData, StateWithLGAs } from "../../Types/types";
 
 // ============================================================================
 // PROPS INTERFACES
@@ -53,6 +52,9 @@ interface DigitizationFlowDesignProps {
   progress: number;
   formData: DigitizationFormData;
   setFormData: (data: DigitizationFormData) => void;
+  states: StateWithLGAs[];
+  availableLGAs: any[];
+  loadingStates: boolean;
 
   photoPreview: string | null;
   photoFile: File | null;
@@ -93,6 +95,9 @@ interface DigitizationFlowDesignProps {
 interface Step1Props {
   formData: DigitizationFormData;
   setFormData: (data: DigitizationFormData) => void;
+  states: StateWithLGAs[];
+  availableLGAs: any[];
+  loadingStates: boolean;
   photoPreview: string | null;
   ninSlipPreview: string | null;
   handlePhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -128,6 +133,9 @@ export function DigitizationFlowDesign({
   progress,
   formData,
   setFormData,
+  states,
+  availableLGAs,
+  loadingStates,
   photoPreview,
   ninSlipPreview,
   certificatePreview,
@@ -190,6 +198,9 @@ export function DigitizationFlowDesign({
             <Step1
               formData={formData}
               setFormData={setFormData}
+              states={states}
+              availableLGAs={availableLGAs}
+              loadingStates={loadingStates}
               photoPreview={photoPreview}
               ninSlipPreview={ninSlipPreview}
               handlePhotoUpload={handlePhotoUpload}
@@ -313,6 +324,9 @@ export function DigitizationFlowDesign({
 function Step1({
   formData,
   setFormData,
+  states,
+  availableLGAs,
+  loadingStates,
   photoPreview,
   ninSlipPreview,
   handlePhotoUpload,
@@ -359,7 +373,7 @@ function Step1({
                 <Upload className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
                 <p className="text-xs">Click to upload photo</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  JPG, PNG (MAX. 2MB)
+                  JPG, PNG (MAX. 1MB)
                 </p>
               </label>
 
@@ -402,7 +416,7 @@ function Step1({
                 <Upload className="w-5 h-5 mx-auto mb-1 text-muted-foreground" />
                 <p className="text-xs">Click to upload NIN slip</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  JPG, PNG, PDF (MAX. 5MB)
+                  JPG, PNG, PDF (MAX. 2MB)
                 </p>
               </label>
 
@@ -499,20 +513,24 @@ function Step1({
             <Label htmlFor="state">State *</Label>
             <Select
               value={formData.state}
-              onValueChange={(value) =>
-                setFormData({ ...formData, state: value })
-              }
+              onValueChange={(value) => {
+                setFormData({ ...formData, state: value, lga: "" });
+              }}
+              disabled={loadingStates}
             >
               <SelectTrigger id="state" className="rounded-lg">
-                <SelectValue placeholder="Select your State" />
+                <SelectValue
+                  placeholder={
+                    loadingStates ? "Loading states..." : "Select your State"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Lagos">Lagos</SelectItem>
-                <SelectItem value="Oyo">Oyo</SelectItem>
-                <SelectItem value="Kano">Kano</SelectItem>
-                <SelectItem value="Rivers">Rivers</SelectItem>
-                <SelectItem value="Kaduna">Kaduna</SelectItem>
-                <SelectItem value="Abuja">Federal Capital Territory</SelectItem>
+                {states.map((state) => (
+                  <SelectItem key={state.id} value={state.id}>
+                    {state.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -523,18 +541,21 @@ function Step1({
               onValueChange={(value) =>
                 setFormData({ ...formData, lga: value })
               }
+              disabled={!formData.state || availableLGAs.length === 0}
             >
               <SelectTrigger id="lga" className="rounded-lg">
-                <SelectValue placeholder="Select your LGA" />
+                <SelectValue
+                  placeholder={
+                    !formData.state ? "Select state first" : "Select your LGA"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Ikeja">Ikeja</SelectItem>
-                <SelectItem value="Lagos Island">Lagos Island</SelectItem>
-                <SelectItem value="Surulere">Surulere</SelectItem>
-                <SelectItem value="Eti-Osa">Eti-Osa</SelectItem>
-                <SelectItem value="Alimosho">Alimosho</SelectItem>
-                <SelectItem value="Saki West">Saki West (Oyo)</SelectItem>
-                <SelectItem value="Agege">Agege (Lagos)</SelectItem>
+                {availableLGAs.map((lga: any) => (
+                  <SelectItem key={lga.id} value={lga.id}>
+                    {lga.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -578,7 +599,7 @@ function Step2({
               <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
               <p className="text-sm">Click to upload or drag and drop</p>
               <p className="text-xs text-muted-foreground mt-1">
-                PDF, PNG, JPG (MAX. 5MB)
+                PDF, PNG, JPG (MAX. 3MB)
               </p>
             </label>
 
@@ -652,7 +673,9 @@ function Step2({
 // Step 3: Payment
 function Step3({ digitizationAmount, paymentReference }: Step3Props) {
   const processingFee = 500;
-  const digitizationFee = digitizationAmount - processingFee;
+  // digitizationAmount already includes the total, so calculate the base fee
+  const baseFee = digitizationAmount > 0 ? digitizationAmount : 0;
+  const totalAmount = baseFee + processingFee;
 
   return (
     <>
@@ -672,9 +695,7 @@ function Step3({ digitizationAmount, paymentReference }: Step3Props) {
               <span className="text-muted-foreground">
                 Certificate Digitization Fee
               </span>
-              <span className="text-lg">
-                ₦{digitizationFee.toLocaleString()}
-              </span>
+              <span className="text-lg">₦{baseFee.toLocaleString()}</span>
             </div>
 
             <div className="flex justify-between items-center text-sm">
@@ -685,7 +706,7 @@ function Step3({ digitizationAmount, paymentReference }: Step3Props) {
             <div className="border-t border-border pt-3 flex justify-between items-center">
               <span className="font-semibold">Total Amount</span>
               <span className="text-3xl font-bold text-primary">
-                ₦{digitizationAmount.toLocaleString()}
+                ₦{totalAmount.toLocaleString()}
               </span>
             </div>
           </div>
