@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
-import imageCompression from 'browser-image-compression';
-import { toast } from 'sonner';
+import { useState, useCallback } from "react";
+import imageCompression from "browser-image-compression";
+import { toast } from "sonner";
 
 interface FileUploadOptions {
   maxSizeMB?: number;
@@ -23,7 +23,7 @@ interface UploadState {
 export function useFileUploadEnhanced(options: FileUploadOptions = {}) {
   const {
     maxSizeMB = 5,
-    allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'],
+    allowedTypes = ["image/jpeg", "image/png", "application/pdf"],
     compressImages = true,
     compressionMaxSizeMB = 1,
     compressionMaxWidthOrHeight = 1920,
@@ -43,8 +43,8 @@ export function useFileUploadEnhanced(options: FileUploadOptions = {}) {
     // Check file type
     if (!allowedTypes.includes(file.type)) {
       const allowedExtensions = allowedTypes
-        .map(type => type.split('/')[1].toUpperCase())
-        .join(', ');
+        .map((type) => type.split("/")[1].toUpperCase())
+        .join(", ");
       return {
         valid: false,
         error: `Invalid file type. Allowed: ${allowedExtensions}`,
@@ -72,47 +72,43 @@ export function useFileUploadEnhanced(options: FileUploadOptions = {}) {
       };
 
       const compressedFile = await imageCompression(file, options);
-      
+
       // Show compression results
       const originalSizeMB = (file.size / (1024 * 1024)).toFixed(2);
       const compressedSizeMB = (compressedFile.size / (1024 * 1024)).toFixed(2);
-      
-      console.log(
-        `Image compressed: ${originalSizeMB}MB → ${compressedSizeMB}MB`
-      );
 
       return compressedFile;
     } catch (error) {
-      console.error('Image compression failed:', error);
+      console.error("Image compression failed:", error);
       return file; // Return original if compression fails
     }
   };
 
   const generatePreview = useCallback((file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
-      if (file.type === 'application/pdf') {
-        resolve('pdf');
-      } else if (file.type.startsWith('image/')) {
+      if (file.type === "application/pdf") {
+        resolve("pdf");
+      } else if (file.type.startsWith("image/")) {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       } else {
-        resolve('file');
+        resolve("file");
       }
     });
   }, []);
 
   const handleUpload = useCallback(
     async (file: File) => {
-      setState(prev => ({ ...prev, isUploading: true, error: null }));
+      setState((prev) => ({ ...prev, isUploading: true, error: null }));
 
       try {
         // Validate file
         const validation = validateFile(file);
         if (!validation.valid) {
-          const error = validation.error || 'Invalid file';
-          setState(prev => ({ ...prev, error, isUploading: false }));
+          const error = validation.error || "Invalid file";
+          setState((prev) => ({ ...prev, error, isUploading: false }));
           toast.error(error);
           onError?.(error);
           return;
@@ -123,19 +119,19 @@ export function useFileUploadEnhanced(options: FileUploadOptions = {}) {
         // Compress images if enabled
         if (
           compressImages &&
-          file.type.startsWith('image/') &&
-          file.type !== 'image/gif'
+          file.type.startsWith("image/") &&
+          file.type !== "image/gif"
         ) {
-          setState(prev => ({ ...prev, uploadProgress: 30 }));
+          setState((prev) => ({ ...prev, uploadProgress: 30 }));
           processedFile = await compressImage(file);
         }
 
-        setState(prev => ({ ...prev, uploadProgress: 60 }));
+        setState((prev) => ({ ...prev, uploadProgress: 60 }));
 
         // Generate preview
         const preview = await generatePreview(processedFile);
 
-        setState(prev => ({ ...prev, uploadProgress: 90 }));
+        setState((prev) => ({ ...prev, uploadProgress: 90 }));
 
         // Update state
         setState({
@@ -149,9 +145,9 @@ export function useFileUploadEnhanced(options: FileUploadOptions = {}) {
         // Call callback
         onUpload?.(processedFile);
 
-        toast.success('File uploaded successfully');
+        toast.success("File uploaded successfully");
       } catch (error: any) {
-        const errorMessage = error.message || 'Failed to upload file';
+        const errorMessage = error.message || "Failed to upload file";
         setState({
           file: null,
           preview: null,
@@ -186,7 +182,7 @@ export function useFileUploadEnhanced(options: FileUploadOptions = {}) {
 
     if (inputId) {
       const input = document.getElementById(inputId) as HTMLInputElement;
-      if (input) input.value = '';
+      if (input) input.value = "";
     }
   }, []);
 

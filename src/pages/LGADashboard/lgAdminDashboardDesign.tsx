@@ -24,6 +24,7 @@ import {
   Edit,
   Trash2,
   Upload,
+  Clock,
 } from "lucide-react";
 import { StatsCard } from "../../components/StatsCard";
 import { StatusBadge } from "../../components/StatusBadge";
@@ -99,14 +100,26 @@ interface LGAdminDashboardDesignProps {
   applications: Application[];
   filteredApplications: Application[];
   digitizationRequests: DigitizationRequest[];
+  digitizationOverview?: {
+    approved_requests_this_month: number;
+    pending_requests: number;
+    revenue_generated: number;
+  } | null;
+  reportAnalytics?: any;
   dynamicFields: DynamicField[];
   weeklyData: ChartDataPoint[];
   approvalData: ApprovalData[];
   handleLogout: () => void;
   handleAddDynamicField: (field: Omit<DynamicField, "id">) => void;
   handleDeleteDynamicField: (fieldId: string, fieldLabel: string) => void;
+  handleSaveFees: (feeData: {
+    application_fee: number;
+    digitization_fee: number;
+    regeneration_fee: number;
+  }) => void;
   handleExportApplications: () => void;
   handleExportDigitization: () => void;
+  handleDownloadReport: (reportType: string) => void;
   currentPage: number;
   pageSize: number;
   totalItems: number;
@@ -136,14 +149,19 @@ export function LGAdminDashboardDesign({
   applications,
   filteredApplications,
   digitizationRequests,
+  digitizationOverview,
+  reportAnalytics,
   dynamicFields,
+  lgaFees,
   weeklyData,
   approvalData,
   handleLogout,
   handleAddDynamicField,
   handleDeleteDynamicField,
+  handleSaveFees,
   handleExportApplications,
   handleExportDigitization,
+  handleDownloadReport,
   currentPage,
   pageSize,
   totalItems,
@@ -290,6 +308,7 @@ export function LGAdminDashboardDesign({
           {activeTab === "digitization" && (
             <DigitizationTab
               requests={digitizationRequests}
+              overviewData={digitizationOverview}
               onExport={handleExportDigitization}
               currentPage={currentPage}
               pageSize={pageSize}
@@ -302,13 +321,20 @@ export function LGAdminDashboardDesign({
             />
           )}
 
-          {activeTab === "reports" && <ReportsTab />}
+          {activeTab === "reports" && (
+            <ReportsTab
+              reportAnalytics={reportAnalytics}
+              onDownloadReport={handleDownloadReport}
+            />
+          )}
 
           {activeTab === "settings" && (
             <SettingsTab
               dynamicFields={dynamicFields}
+              lgaFees={lgaFees}
               handleAddDynamicField={handleAddDynamicField}
               handleDeleteDynamicField={handleDeleteDynamicField}
+              handleSaveFees={handleSaveFees}
             />
           )}
         </div>
@@ -657,6 +683,11 @@ function ApplicationsTab({
 // Digitization Tab
 interface DigitizationTabProps {
   requests: DigitizationRequest[];
+  overviewData?: {
+    approved_requests_this_month: number;
+    pending_requests: number;
+    revenue_generated: number;
+  } | null;
   onExport: () => void;
   currentPage: number;
   pageSize: number;
@@ -670,6 +701,7 @@ interface DigitizationTabProps {
 
 function DigitizationTab({
   requests,
+  overviewData,
   onExport,
   currentPage,
   pageSize,
@@ -704,7 +736,9 @@ function DigitizationTab({
                 <p className="text-sm text-muted-foreground mb-2">
                   Pending Digitization
                 </p>
-                <p className="text-3xl">1</p>
+                <p className="text-3xl">
+                  {overviewData?.pending_requests ?? 0}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
                 <FileText className="w-6 h-6 text-purple-600" />
@@ -720,7 +754,9 @@ function DigitizationTab({
                 <p className="text-sm text-muted-foreground mb-2">
                   Approved This Month
                 </p>
-                <p className="text-3xl">12</p>
+                <p className="text-3xl">
+                  {overviewData?.approved_requests_this_month ?? 0}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
@@ -736,7 +772,9 @@ function DigitizationTab({
                 <p className="text-sm text-muted-foreground mb-2">
                   Revenue Generated
                 </p>
-                <p className="text-3xl">₦27.6K</p>
+                <p className="text-3xl">
+                  ₦{(overviewData?.revenue_generated ?? 0).toLocaleString()}
+                </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
                 <DollarSign className="w-6 h-6 text-blue-600" />
@@ -844,34 +882,182 @@ function DigitizationTab({
 }
 
 // Reports Tab
-function ReportsTab() {
+interface ReportsTabProps {
+  reportAnalytics?: any;
+  onDownloadReport: (reportType: string) => void;
+}
+
+function ReportsTab({ reportAnalytics, onDownloadReport }: ReportsTabProps) {
+  const [selectedReportType, setSelectedReportType] = useState("monthly");
+
   return (
     <div className="space-y-6">
-      <h2>Reports & Analytics</h2>
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2>Reports & Analytics</h2>
+          <p className="text-muted-foreground">
+            View key metrics and export reports
+          </p>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid md:grid-cols-4 gap-6">
         <Card className="rounded-xl">
-          <CardHeader>
-            <CardTitle>Generate Report</CardTitle>
-            <CardDescription>Export application data</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Select>
-              <SelectTrigger>
-                <SelectValue placeholder="Select report type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="monthly">Monthly Summary</SelectItem>
-                <SelectItem value="quarterly">Quarterly Report</SelectItem>
-                <SelectItem value="annual">Annual Report</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button className="w-full">
-              <Download className="w-4 h-4 mr-2" />
-              Download Report
-            </Button>
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Total Revenue
+                </p>
+                <p className="text-3xl font-bold">
+                  ₦
+                  {(
+                    reportAnalytics?.metric_cards?.total_revenue || 0
+                  ).toLocaleString()}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Total Requests
+                </p>
+                <p className="text-3xl font-bold">
+                  {reportAnalytics?.metric_cards?.total_requests || 0}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Approval Rate
+                </p>
+                <p className="text-3xl font-bold">
+                  {(
+                    (reportAnalytics?.metric_cards?.approval_rate || 0) * 100
+                  ).toFixed(1)}
+                  %
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 text-purple-600" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Avg Processing Days
+                </p>
+                <p className="text-3xl font-bold">
+                  {reportAnalytics?.metric_cards?.average_processing_days || 0}
+                </p>
+              </div>
+              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-orange-600" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Status Distribution */}
+      <div className="grid md:grid-cols-3 gap-6">
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Approved</p>
+                <p className="text-3xl font-bold text-green-600">
+                  {reportAnalytics?.status_distribution?.approved || 0}
+                </p>
+              </div>
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Pending</p>
+                <p className="text-3xl font-bold text-orange-600">
+                  {reportAnalytics?.status_distribution?.pending || 0}
+                </p>
+              </div>
+              <Clock className="w-8 h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-xl">
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">Rejected</p>
+                <p className="text-3xl font-bold text-red-600">
+                  {reportAnalytics?.status_distribution?.rejected || 0}
+                </p>
+              </div>
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Export Report Section */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <CardTitle>Generate Report</CardTitle>
+          <CardDescription>
+            Export application data and analytics as CSV
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Select
+            value={selectedReportType}
+            onValueChange={setSelectedReportType}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select report type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="monthly">Monthly Summary</SelectItem>
+              <SelectItem value="quarterly">Quarterly Report</SelectItem>
+              <SelectItem value="annual">Annual Report</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            className="w-full"
+            onClick={() => onDownloadReport(selectedReportType)}
+          >
+            <Download className="w-4 h-4 mr-2" />
+            Download Report
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -879,23 +1065,37 @@ function ReportsTab() {
 // Settings Tab
 interface SettingsTabProps {
   dynamicFields: DynamicField[];
+  lgaFees?: any;
   handleAddDynamicField: (field: Omit<DynamicField, "id">) => void;
   handleDeleteDynamicField: (fieldId: string, fieldLabel: string) => void;
+  handleSaveFees: (feeData: {
+    application_fee: number;
+    digitization_fee: number;
+    regeneration_fee: number;
+  }) => void;
 }
 
 function SettingsTab({
   dynamicFields,
+  lgaFees,
   handleAddDynamicField,
   handleDeleteDynamicField,
+  handleSaveFees,
 }: SettingsTabProps) {
   const [isAddFieldModalOpen, setIsAddFieldModalOpen] = useState(false);
   const [isEditFieldModalOpen, setIsEditFieldModalOpen] = useState(false);
+  const [isEditFeesModalOpen, setIsEditFeesModalOpen] = useState(false);
   const [editingField, setEditingField] = useState<DynamicField | null>(null);
   const [newField, setNewField] = useState({
     field_label: "",
     field_type: "text" as "text" | "number" | "date" | "file" | "dropdown",
     is_required: false,
     dropdown_options: ["Option 1", "Option 2"],
+  });
+  const [feeData, setFeeData] = useState({
+    application_fee: lgaFees?.application_fee || 0,
+    digitization_fee: lgaFees?.digitization_fee || 0,
+    regeneration_fee: lgaFees?.regeneration_fee || 0,
   });
 
   const handleEditClick = (field: DynamicField) => {
@@ -1044,6 +1244,229 @@ function SettingsTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Application Fees Configuration */}
+      <Card className="rounded-xl border shadow-sm">
+        <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <div className="space-y-1 flex-1">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Application Fees
+              </CardTitle>
+              <CardDescription className="text-sm text-gray-600">
+                Configure fees for different application types
+              </CardDescription>
+            </div>
+            <Button
+              onClick={() => {
+                setFeeData({
+                  application_fee: parseFloat(lgaFees?.application_fee || 0),
+                  digitization_fee: parseFloat(lgaFees?.digitization_fee || 0),
+                  regeneration_fee: parseFloat(lgaFees?.regeneration_fee || 0),
+                });
+                setIsEditFeesModalOpen(true);
+              }}
+              className="!bg-blue-600 hover:!bg-blue-700 !text-white ml-auto sm:ml-0"
+            >
+              <Edit className="w-4 h-4 mr-2" />
+              {lgaFees ? "Update Fees" : "Set Fees"}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-6">
+          {lgaFees ? (
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border border-green-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-green-700 font-medium mb-1">
+                      Application Fee
+                    </p>
+                    <p className="text-3xl font-bold text-green-900">
+                      ₦{parseFloat(lgaFees.application_fee).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-green-200 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-green-700" />
+                  </div>
+                </div>
+                <p className="text-xs text-green-700">
+                  Fee for certificate applications
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-6 border border-purple-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-purple-700 font-medium mb-1">
+                      Digitization Fee
+                    </p>
+                    <p className="text-3xl font-bold text-purple-900">
+                      ₦{parseFloat(lgaFees.digitization_fee).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-purple-200 flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-purple-700" />
+                  </div>
+                </div>
+                <p className="text-xs text-purple-700">
+                  Fee for certificate digitization
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-6 border border-orange-200">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <p className="text-sm text-orange-700 font-medium mb-1">
+                      Regeneration Fee
+                    </p>
+                    <p className="text-3xl font-bold text-orange-900">
+                      ₦{parseFloat(lgaFees.regeneration_fee).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-xl bg-orange-200 flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-orange-700" />
+                  </div>
+                </div>
+                <p className="text-xs text-orange-700">
+                  Fee for certificate regeneration
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-12 px-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+                <DollarSign className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No fees configured
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Set application fees for your local government
+              </p>
+              <div className="flex justify-center">
+                <Button
+                  onClick={() => {
+                    setFeeData({
+                      application_fee: 0,
+                      digitization_fee: 0,
+                      regeneration_fee: 0,
+                    });
+                    setIsEditFeesModalOpen(true);
+                  }}
+                  className="!bg-blue-600 hover:!bg-blue-700 !text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Configure Fees
+                </Button>
+              </div>
+            </div>
+          )}
+          {lgaFees && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-gray-500">Currency</p>
+                  <p className="font-medium text-gray-900">
+                    {lgaFees.currency}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Last Updated</p>
+                  <p className="font-medium text-gray-900">
+                    {new Date(lgaFees.updated_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Fees Modal */}
+      <Dialog open={isEditFeesModalOpen} onOpenChange={setIsEditFeesModalOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              {lgaFees ? "Update" : "Set"} Application Fees
+            </DialogTitle>
+            <DialogDescription>
+              Configure fees for certificate applications, digitization, and
+              regeneration
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="application_fee">Application Fee (₦)</Label>
+              <Input
+                id="application_fee"
+                type="number"
+                value={feeData.application_fee}
+                onChange={(e) =>
+                  setFeeData({
+                    ...feeData,
+                    application_fee: parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="Enter application fee"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="digitization_fee">Digitization Fee (₦)</Label>
+              <Input
+                id="digitization_fee"
+                type="number"
+                value={feeData.digitization_fee}
+                onChange={(e) =>
+                  setFeeData({
+                    ...feeData,
+                    digitization_fee: parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="Enter digitization fee"
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="regeneration_fee">Regeneration Fee (₦)</Label>
+              <Input
+                id="regeneration_fee"
+                type="number"
+                value={feeData.regeneration_fee}
+                onChange={(e) =>
+                  setFeeData({
+                    ...feeData,
+                    regeneration_fee: parseFloat(e.target.value) || 0,
+                  })
+                }
+                placeholder="Enter regeneration fee"
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setIsEditFeesModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                handleSaveFees(feeData);
+                setIsEditFeesModalOpen(false);
+              }}
+              className="!bg-blue-600 hover:!bg-blue-700 !text-white"
+            >
+              {lgaFees ? "Update" : "Create"} Fees
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Field Modal */}
       <Dialog open={isAddFieldModalOpen} onOpenChange={setIsAddFieldModalOpen}>

@@ -10,6 +10,7 @@ class DigitizationService {
       certificateFile?: File;
       full_name: string;
       state: string;
+      local_government_id?: string;
     }
   ) {
     if (USE_MOCK) {
@@ -26,6 +27,11 @@ class DigitizationService {
     formData.append("local_government", data.lga);
     formData.append("phone_number", data.phone);
     formData.append("certificate_reference_number", data.certificateRef);
+
+    // Add local_government_id if provided (for fee lookup)
+    if (data.local_government_id) {
+      formData.append("local_government_id", data.local_government_id);
+    }
 
     // Optional file fields
     if (data.profilePhoto) {

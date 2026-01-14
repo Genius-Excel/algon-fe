@@ -15,32 +15,48 @@ class AdminService {
   }
 
   // Dynamic Fields Management
+  // Note: GET endpoint for listing dynamic response fields is not available yet
+  // Returning empty array until the endpoint is implemented
   async getDynamicFields(lgId?: string) {
     if (USE_MOCK) {
       return mockAdminService.getDynamicFields(lgId);
     }
-    const endpoint = lgId
-      ? `/lg/requirements/?lg=${lgId}`
-      : "/lg/requirements/";
-    const response = await apiClient.get(endpoint);
-    return response.data;
+
+    // TODO: Replace with actual GET endpoint when available
+    // For now, return empty array since GET /api/admin/response-fields returns 404
+    return [];
   }
 
   async createDynamicField(fieldData: {
-    local_government: string;
     field_label: string;
     field_name: string;
     is_required: boolean;
     field_type: string;
   }) {
     if (USE_MOCK) {
-      return mockAdminService.createDynamicField(fieldData);
+      return mockAdminService.createDynamicField({
+        ...fieldData,
+        local_government: "mock-lg-id",
+      });
     }
 
     try {
+      // Get current user to extract local_government ID
+      const authService = (await import("./auth.service")).default;
+      const userInfo = await authService.getCurrentUser();
+
+      if (!userInfo.local_government) {
+        throw new Error(
+          "Local government not found. Please ensure you are logged in as an LG admin."
+        );
+      }
+
       const response = await apiClient.post(
         "/admin/create-response-field",
-        fieldData,
+        {
+          ...fieldData,
+          local_government: userInfo.local_government,
+        },
         {
           headers: {
             "Content-Type": "application/json",
@@ -94,6 +110,16 @@ class AdminService {
     }
 
     try {
+      // Validate user has local_government
+      const authService = (await import("./auth.service")).default;
+      const userInfo = await authService.getCurrentUser();
+
+      if (!userInfo.local_government) {
+        throw new Error(
+          "Local government not found. Please ensure you are logged in as an LG admin."
+        );
+      }
+
       const response = await apiClient.patch(
         `/api/admin/response-fields/${fieldId}`,
         fieldData,
@@ -139,6 +165,16 @@ class AdminService {
     }
 
     try {
+      // Validate user has local_government
+      const authService = (await import("./auth.service")).default;
+      const userInfo = await authService.getCurrentUser();
+
+      if (!userInfo.local_government) {
+        throw new Error(
+          "Local government not found. Please ensure you are logged in as an LG admin."
+        );
+      }
+
       const response = await apiClient.delete(
         `/api/admin/response-fields/${fieldId}`
       );
@@ -438,7 +474,7 @@ class AdminService {
 
     try {
       const response = await apiClient.put(
-        `/api/admin/super/lg-update/${adminId}`,
+        `/admin/super/lg-update/${adminId}`,
         data,
         {
           headers: {

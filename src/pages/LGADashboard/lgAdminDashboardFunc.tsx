@@ -41,6 +41,9 @@ export function LGAdminDashboard() {
   const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [approvalData, setApprovalData] = useState<any[]>([]);
+  const [digitizationOverview, setDigitizationOverview] = useState<any>(null);
+  const [reportAnalytics, setReportAnalytics] = useState<any>(null);
+  const [lgaFees, setLgaFees] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // ✅ Fetch data on mount and when pagination changes
@@ -55,7 +58,7 @@ export function LGAdminDashboard() {
       // ✅ Load different data based on active tab
       if (activeTab === "dashboard") {
         const [appsData, dashboardData] = await Promise.all([
-          applicationService.getAllApplications({
+          adminService.getAllApplications({
             limit: pageSize,
             page: currentPage,
           }),
@@ -71,7 +74,7 @@ export function LGAdminDashboard() {
         setWeeklyData(dashboardData.charts?.weeklyApplications || []);
         setApprovalData(dashboardData.charts?.approvalStats || []);
       } else if (activeTab === "applications") {
-        const data = await applicationService.getAllApplications({
+        const data = await adminService.getAllApplications({
           limit: pageSize,
           page: currentPage,
           status: statusFilter !== "all" ? statusFilter : undefined,
@@ -81,17 +84,30 @@ export function LGAdminDashboard() {
         setHasNext(!!data.next);
         setHasPrevious(!!data.previous);
       } else if (activeTab === "digitization") {
-        const data = await digitizationService.getAllDigitizationRequests({
-          limit: pageSize,
-          page: currentPage,
-        });
-        setDigitizationRequests(data.results || []);
-        setTotalItems(data.count || 0);
-        setHasNext(!!data.next);
-        setHasPrevious(!!data.previous);
+        const [digitizationData, overviewData] = await Promise.all([
+          adminService.getAllApplications({
+            application_type: "digitization",
+            limit: pageSize,
+            page: currentPage,
+          }),
+          adminService.getDigitizationOverview(),
+        ]);
+
+        setDigitizationOverview(overviewData.data || null);
+        setDigitizationRequests(digitizationData.results || []);
+        setTotalItems(digitizationData.count || 0);
+        setHasNext(!!digitizationData.next);
+        setHasPrevious(!!digitizationData.previous);
+      } else if (activeTab === "reports") {
+        const analytics = await adminService.getReportAnalytics();
+        setReportAnalytics(analytics?.data || analytics);
       } else if (activeTab === "settings") {
-        const fields = await adminService.getDynamicFields();
+        const [fields, fees] = await Promise.all([
+          adminService.getDynamicFields(),
+          adminService.getLGAFee(),
+        ]);
         setDynamicFields(fields || []);
+        setLgaFees(fees?.data?.[0] || null);
       }
     } catch (error: any) {
       console.error("Failed to load dashboard data:", error);
@@ -175,6 +191,33 @@ export function LGAdminDashboard() {
     });
   };
 
+  // ✅ Handler for creating/updating LGA fees
+  const handleSaveFees = async (feeData: {
+    application_fee: number;
+    digitization_fee: number;
+    regeneration_fee: number;
+  }) => {
+    const loadingToast = toast.loading(
+      lgaFees ? "Updating fees..." : "Creating fees..."
+    );
+    try {
+      let result;
+      if (lgaFees) {
+        result = await adminService.updateLGAFee(feeData);
+        toast.success("Fees updated successfully", { id: loadingToast });
+      } else {
+        result = await adminService.createLGAFee(feeData);
+        toast.success("Fees created successfully", { id: loadingToast });
+      }
+      // Extract fee data from response and update state
+      const feeDataFromResponse = result?.data?.[0] || result?.data || null;
+      setLgaFees(feeDataFromResponse);
+    } catch (error: any) {
+      console.error("Failed to save fees:", error);
+      toast.error(error.message || "Failed to save fees", { id: loadingToast });
+    }
+  };
+
   // ✅ Export applications as CSV
   const handleExportApplications = async () => {
     try {
@@ -209,6 +252,95 @@ export function LGAdminDashboard() {
     } catch (error: any) {
       console.error("Export failed:", error);
     }
+  };
+
+  // ✅ Download report analytics
+  const handleDownloadReport = async (reportType: string) => {
+    const loadingToast = toast.loading("Generating report...");
+    try {
+      const analyticsResponse = await adminService.getReportAnalytics();
+
+      // Extract data from response
+      const analyticsData = analyticsResponse?.data || analyticsResponse;
+
+      // Convert analytics data to CSV format
+      const csvContent = generateReportCSV(analyticsData, reportType);
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+      // Use downloadFile helper
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `analytics-report-${reportType}-${
+        new Date().toISOString().split("T")[0]
+      }.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast.success("Report downloaded successfully", { id: loadingToast });
+    } catch (error: any) {
+      console.error("Report download failed:", error);
+      toast.error(error.message || "Failed to download report", {
+        id: loadingToast,
+      });
+    }
+  };
+
+  // Helper function to generate CSV from analytics data
+  const generateReportCSV = (data: any, reportType: string): string => {
+    let csv = "";
+
+    // Add header
+    csv += `Analytics Report - ${reportType}\n`;
+    csv += `Generated: ${new Date().toLocaleString()}\n\n`;
+
+    // Metric Cards Section
+    csv += "KEY METRICS\n";
+    csv += "Metric,Value\n";
+    csv += `Total Revenue,₦${
+      data.metric_cards?.total_revenue?.toLocaleString() || 0
+    }\n`;
+    csv += `Total Requests,${data.metric_cards?.total_requests || 0}\n`;
+    csv += `Approval Rate,${(
+      (data.metric_cards?.approval_rate || 0) * 100
+    ).toFixed(1)}%\n`;
+    csv += `Average Processing Days,${
+      data.metric_cards?.average_processing_days || 0
+    }\n\n`;
+
+    // Status Distribution Section
+    csv += "STATUS DISTRIBUTION\n";
+    csv += "Status,Count\n";
+    csv += `Approved,${data.status_distribution?.approved || 0}\n`;
+    csv += `Pending,${data.status_distribution?.pending || 0}\n`;
+    csv += `Rejected,${data.status_distribution?.rejected || 0}\n\n`;
+
+    // Monthly Breakdown - Certificates
+    csv += "MONTHLY BREAKDOWN - CERTIFICATES\n";
+    csv += "Month,Total\n";
+    data.monthly_breakdown?.certificate?.forEach((item: any) => {
+      const month = new Date(item.month).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      });
+      csv += `${month},${item.total}\n`;
+    });
+    csv += "\n";
+
+    // Monthly Breakdown - Digitizations
+    csv += "MONTHLY BREAKDOWN - DIGITIZATIONS\n";
+    csv += "Month,Total\n";
+    data.monthly_breakdown?.digitizations?.forEach((item: any) => {
+      const month = new Date(item.month).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      });
+      csv += `${month},${item.total}\n`;
+    });
+
+    return csv;
   };
 
   // Pagination handlers
@@ -251,14 +383,19 @@ export function LGAdminDashboard() {
       applications={applications}
       filteredApplications={filteredApplications}
       digitizationRequests={digitizationRequests}
+      digitizationOverview={digitizationOverview}
+      reportAnalytics={reportAnalytics}
       dynamicFields={dynamicFields}
+      lgaFees={lgaFees}
       weeklyData={weeklyData}
       approvalData={approvalData}
       handleLogout={handleLogout}
       handleAddDynamicField={handleAddDynamicField}
       handleDeleteDynamicField={handleDeleteDynamicField}
+      handleSaveFees={handleSaveFees}
       handleExportApplications={handleExportApplications}
       handleExportDigitization={handleExportDigitization}
+      handleDownloadReport={handleDownloadReport}
       currentPage={currentPage}
       pageSize={pageSize}
       totalItems={totalItems}

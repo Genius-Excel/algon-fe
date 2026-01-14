@@ -51,6 +51,7 @@ export interface UserInfo {
   nin: string;
   account_status: string;
   role: string;
+  local_government?: string; // UUID of the local government for LG admins
   groups: any[];
   user_permissions: any[];
 }
@@ -74,27 +75,22 @@ class AuthService {
 
     // Real API call to /auth/login
     try {
-      // API expects application/x-www-form-urlencoded
-      const formData = new URLSearchParams();
-      formData.append("email", credentials.email);
-      formData.append("password", credentials.password);
-
       const response = await apiClient.post<{
         message: string;
         user_id: string;
         role: string;
         "refresh-token": string;
         "access-token": string;
-      }>("/auth/login", formData, {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+      }>("/auth/login", {
+        email: credentials.email,
+        password: credentials.password,
       });
 
       // Map backend role format to frontend format
       const mapRole = (backendRole: string): UserRole => {
         if (backendRole === "super-admin") return "superAdmin";
-        if (backendRole === "admin") return "admin";
+        if (backendRole === "admin" || backendRole === "lg-admin")
+          return "admin";
         return "applicant";
       };
 

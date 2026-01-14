@@ -90,6 +90,7 @@ interface SuperAdminDashboardDesignProps {
   }) => void;
   handleLogout: () => void;
   onNavigate: (page: string) => void;
+  onReloadLGAs?: () => void;
 }
 
 export function SuperAdminDashboardDesign({
@@ -113,6 +114,7 @@ export function SuperAdminDashboardDesign({
   onAuditLogFiltersChange,
   handleLogout,
   onNavigate,
+  onReloadLGAs,
 }: SuperAdminDashboardDesignProps) {
   const navigate = useNavigate();
 
@@ -214,6 +216,7 @@ export function SuperAdminDashboardDesign({
               filteredLGAs={filteredLGAs}
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
+              onReloadLGAs={onReloadLGAs}
             />
           )}
 
@@ -251,18 +254,8 @@ function DashboardTab({
   lgas,
   dashboardStats,
 }: DashboardTabProps) {
-  console.log("🎨 DashboardTab received props:");
-  console.log("  - monthlyData:", monthlyData);
-  console.log("  - monthlyRevenueData:", monthlyRevenueData);
-  console.log("  - dashboardStats:", dashboardStats);
-  console.log(
-    "  - dashboardStats?.metric_cards:",
-    dashboardStats?.metric_cards
-  );
-
   // Extract stats from API response with safe defaults
   const metricCards = dashboardStats?.metric_cards || {};
-  console.log("  - metricCards:", metricCards);
 
   const totalApplications = metricCards.total_applications || {
     value: 0,
@@ -405,13 +398,30 @@ interface LGAsTabProps {
   filteredLGAs: LocalGovernment[];
   searchTerm: string;
   setSearchTerm: (term: string) => void;
+  onReloadLGAs?: () => void;
 }
 
-function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
+function LGAsTab({
+  filteredLGAs,
+  searchTerm,
+  setSearchTerm,
+  onReloadLGAs,
+}: LGAsTabProps) {
   const [selectedLGA, setSelectedLGA] = useState<LocalGovernment | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  const handleEditClick = (lga: LocalGovernment) => {
+  const handleEditClick = async (lga: LocalGovernment) => {
+    console.log("Edit clicked for LGA:", lga);
+    console.log("Assigned admin:", lga.assigned_admin);
+
+    if (!lga.assigned_admin) {
+      const { toast } = await import("sonner");
+      toast.error(
+        "No administrator assigned to this local government. Please invite an admin first."
+      );
+      return;
+    }
+
     setSelectedLGA(lga);
     setIsEditDialogOpen(true);
   };
@@ -501,6 +511,12 @@ function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
                         size="sm"
                         variant="outline"
                         onClick={() => handleEditClick(lga)}
+                        disabled={!lga.assigned_admin}
+                        title={
+                          !lga.assigned_admin
+                            ? "No admin assigned"
+                            : "Edit admin details"
+                        }
                       >
                         <Edit className="w-3 h-3" />
                       </Button>
@@ -521,6 +537,7 @@ function LGAsTab({ filteredLGAs, searchTerm, setSearchTerm }: LGAsTabProps) {
           setIsEditDialogOpen(false);
           setSelectedLGA(null);
         }}
+        onReloadLGAs={onReloadLGAs}
       />
     </div>
   );
@@ -530,9 +547,15 @@ interface EditLGADialogProps {
   lga: LocalGovernment | null;
   isOpen: boolean;
   onClose: () => void;
+  onReloadLGAs?: () => void;
 }
 
-function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
+function EditLGADialog({
+  lga,
+  isOpen,
+  onClose,
+  onReloadLGAs,
+}: EditLGADialogProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -553,9 +576,19 @@ function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
   }, [lga]);
 
   const handleSubmit = async () => {
-    if (!lga || !lga.assigned_admin) return;
+    console.log("Submit clicked");
+    console.log("LGA:", lga);
+    console.log("Assigned admin:", lga?.assigned_admin);
+
+    if (!lga || !lga.assigned_admin) {
+      console.log("No LGA or assigned admin found");
+      const { toast } = await import("sonner");
+      toast.error("No administrator assigned to this local government");
+      return;
+    }
 
     if (!firstName || !lastName || !email) {
+      console.log("Missing fields:", { firstName, lastName, email });
       const { toast } = await import("sonner");
       toast.error("Please fill in all fields");
       return;
@@ -566,14 +599,29 @@ function EditLGADialog({ lga, isOpen, onClose }: EditLGADialogProps) {
       const { adminService } = await import("../../services");
       const { toast } = await import("sonner");
 
+      console.log("Calling updateLGAdmin with:", {
+        adminId: lga.assigned_admin.id,
+        data: { first_name: firstName, last_name: lastName, email },
+      });
+
       // Call the update service with admin ID
-      await adminService.updateLGAdmin(lga.assigned_admin.id, {
+      const result = await adminService.updateLGAdmin(lga.assigned_admin.id, {
         first_name: firstName,
         last_name: lastName,
         email: email,
       });
 
+      console.log("Update result:", result);
+
       toast.success("LG Admin updated successfully!");
+
+      // Reload LGA data to reflect changes
+      if (onReloadLGAs) {
+        console.log("Calling onReloadLGAs to refresh data");
+        onReloadLGAs();
+      } else {
+        console.warn("onReloadLGAs callback not provided");
+      }
 
       // Reset and close
       onClose();
@@ -701,7 +749,6 @@ function AuditLogTab({
     try {
       const { adminService } = await import("../../services");
       const details = await adminService.getAuditLogById(log.id);
-      console.log("Audit log details:", details);
       setSelectedLog(details.data || details);
     } catch (error: any) {
       console.error("Failed to load audit log details:", error);
@@ -1066,18 +1113,6 @@ function AddLGADialog() {
       const currentUser = tokenManager.getUserData();
       const currentToken = tokenManager.getAccessToken();
 
-      console.log("Current user data:", currentUser);
-      console.log("Current token exists:", !!currentToken);
-      console.log("User role:", currentUser?.role);
-
-      console.log("Submitting LG Admin invite:", {
-        state: selectedState,
-        lga: selectedLGA,
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-      });
-
       const response = await adminService.createLGAdmin({
         state: selectedState,
         lga: selectedLGA,
@@ -1085,8 +1120,6 @@ function AddLGADialog() {
         last_name: lastName,
         email: email,
       });
-
-      console.log("LG Admin invite response:", response);
 
       // Show success message with email status from response
       const successMessage = response.email_status

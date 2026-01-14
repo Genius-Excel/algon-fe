@@ -878,3 +878,12 @@ export interface AllStatesResponse {
   message: string;
   data: StateWithLGs[];
 }
+
+export interface DigitizationOverviewResponse {
+  message: string;
+  data: {
+    approved_requests_this_month: number;
+    pending_requests: number;
+    revenue_generated: number;
+  };
+}
