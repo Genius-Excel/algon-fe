@@ -68,6 +68,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(response.user);
       setIsAuthenticated(true);
 
+      // ✅ Fetch user permissions for LG admins
+      if (response.user.role === "admin") {
+        try {
+          const userInfo = await authService.getCurrentUser();
+          // Store permissions in localStorage - check if array has items
+          if (
+            userInfo.user_permissions &&
+            Array.isArray(userInfo.user_permissions) &&
+            userInfo.user_permissions.length > 0
+          ) {
+            localStorage.setItem(
+              "userPermissions",
+              JSON.stringify(userInfo.user_permissions)
+            );
+          } else {
+            // If no permissions from API or empty array, set default permissions for LG admins
+            const defaultPermissions = [
+              "approveApplications",
+              "viewAnalytics",
+              "manageFees",
+              "manageRequirements",
+              "exportData",
+            ];
+            localStorage.setItem(
+              "userPermissions",
+              JSON.stringify(defaultPermissions)
+            );
+          }
+        } catch (error) {
+          console.warn(
+            "Failed to fetch user permissions, using defaults:",
+            error
+          );
+          // Set default permissions if fetch fails
+          const defaultPermissions = [
+            "approveApplications",
+            "viewAnalytics",
+            "manageFees",
+            "manageRequirements",
+            "exportData",
+          ];
+          localStorage.setItem(
+            "userPermissions",
+            JSON.stringify(defaultPermissions)
+          );
+        }
+      }
+
       // ✅ Navigate based on role (matching UserRole type)
       let targetPath = "/applicant-dashboard";
 
@@ -95,6 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setIsAuthenticated(false);
       tokenManager.clearTokens();
+      // Clear permissions from localStorage
+      localStorage.removeItem("userPermissions");
       navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
