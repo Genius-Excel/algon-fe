@@ -710,10 +710,10 @@ function Step3({
                 </p>
                 <ol className="text-xs text-blue-700 space-y-1 list-decimal list-inside">
                   <li>Click "Proceed to Payment" button below</li>
-                  <li>Paystack payment window will open in a new tab</li>
+                  <li>Paystack payment modal will open</li>
                   <li>Choose your payment method (Card/Bank/USSD)</li>
                   <li>Complete the payment securely</li>
-                  <li>Return here to submit your application</li>
+                  <li>Your application will be submitted automatically</li>
                 </ol>
               </div>
             </div>

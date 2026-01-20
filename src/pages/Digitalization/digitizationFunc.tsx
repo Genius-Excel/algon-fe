@@ -67,7 +67,7 @@ export function DigitizationFlow() {
           // Get selected LGA details
           const selectedState = states.find((s) => s.id === formData.state);
           const selectedLga = selectedState?.local_governtments?.find(
-            (l: any) => l.id === formData.lga
+            (l: any) => l.id === formData.lga,
           );
 
           if (selectedLga) {
@@ -77,7 +77,7 @@ export function DigitizationFlow() {
             });
 
             const lgaData = response.data?.find(
-              (lga: any) => lga.id === formData.lga
+              (lga: any) => lga.id === formData.lga,
             );
 
             // Extract fee from LGA data if available
@@ -160,8 +160,8 @@ export function DigitizationFlow() {
       if (totalSizeMB > 6) {
         toast.error(
           `Total file size (${totalSizeMB.toFixed(
-            2
-          )}MB) exceeds 6MB limit. Please compress or reduce file sizes.`
+            2,
+          )}MB) exceeds 6MB limit. Please compress or reduce file sizes.`,
         );
         setIsInitializingPayment(false);
         return;
@@ -218,7 +218,7 @@ export function DigitizationFlow() {
         console.error("Submit result structure:", submitResult);
         console.error("Response data:", responseData);
         toast.error(
-          "Application submitted but couldn't retrieve application ID. Please check console or contact support."
+          "Application submitted but couldn't retrieve application ID. Please check console or contact support.",
         );
         setIsInitializingPayment(false);
         return;
@@ -230,7 +230,7 @@ export function DigitizationFlow() {
       try {
         const ninResult = await applicationService.verifyNIN(
           applicationId,
-          "digitization"
+          "digitization",
         );
         if (!ninResult.message.toLowerCase().includes("success")) {
           toast.warning(ninResult.message || "NIN verification pending");
@@ -282,24 +282,33 @@ export function DigitizationFlow() {
         application_id: applicationId,
       });
 
-      if (result.status) {
-        setPaymentReference(result.data.reference);
+      if (result.data.status) {
+        setPaymentReference(result.data.data.reference);
 
         // Use Paystack inline popup modal
+        const paystackKey =
+          result.data.public_key || import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+
+        if (!paystackKey) {
+          toast.error("Payment configuration error. Please contact support.");
+          setIsInitializingPayment(false);
+          return;
+        }
+
         const handler = (window as any).PaystackPop.setup({
-          key: result.data.public_key || "pk_test_xxxx", // Use public key from response or fallback
+          key: paystackKey,
           email: formData.email,
           amount: (digitizationAmount + 500) * 100, // Convert to kobo (NGN minor unit)
-          ref: result.data.reference,
+          ref: result.data.data.reference,
           callback: function (response: any) {
             toast.success(
-              "Payment successful! Reference: " + response.reference
+              "Payment successful! Reference: " + response.reference,
             );
             setCurrentStep(4);
           },
           onClose: function () {
             toast.info(
-              "Payment window closed. You can retry payment if needed."
+              "Payment window closed. You can retry payment if needed.",
             );
           },
         });
@@ -317,12 +326,12 @@ export function DigitizationFlow() {
       // Handle specific HTTP status codes per API spec
       if (status === 413) {
         toast.error(
-          "File size too large. Please reduce file sizes and try again. Total size must be under 6MB."
+          "File size too large. Please reduce file sizes and try again. Total size must be under 6MB.",
         );
       } else if (status === 400) {
         toast.error(
           errorData?.message ||
-            "Invalid payment request. Please check all fields."
+            "Invalid payment request. Please check all fields.",
         );
       } else if (status === 401) {
         toast.error("Session expired. Please log in again.");
@@ -330,16 +339,16 @@ export function DigitizationFlow() {
       } else if (status === 409) {
         toast.error(
           errorData?.message ||
-            "Payment already initiated or application not payable."
+            "Payment already initiated or application not payable.",
         );
       } else if (status >= 500) {
         toast.error(
-          "Server error occurred. Please try again later or contact support."
+          "Server error occurred. Please try again later or contact support.",
         );
       } else {
         toast.error(
           errorData?.message ||
-            "Failed to initialize payment. Please try again."
+            "Failed to initialize payment. Please try again.",
         );
       }
     } finally {
@@ -445,7 +454,7 @@ export function DigitizationFlow() {
       }
 
       toast.success(
-        "Payment verified! Your digitization request has been submitted successfully."
+        "Payment verified! Your digitization request has been submitted successfully.",
       );
 
       setTimeout(() => {
@@ -455,7 +464,7 @@ export function DigitizationFlow() {
       console.error("Payment verification error:", error);
       toast.error(
         error.response?.data?.message ||
-          "Failed to verify payment. Please try again."
+          "Failed to verify payment. Please try again.",
       );
     } finally {
       setIsSubmitting(false);
