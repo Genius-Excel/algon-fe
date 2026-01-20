@@ -161,10 +161,41 @@ export function LGAdminDashboard() {
     }
   };
 
+  // ✅ Real handler for updating dynamic field
+  const handleUpdateDynamicField = async (
+    fieldId: string,
+    fieldData: {
+      field_label: string;
+      field_name: string;
+      is_required: boolean;
+      field_type: string;
+    },
+  ) => {
+    try {
+      const updatedField = await adminService.updateDynamicField(
+        fieldId,
+        fieldData,
+      );
+      setDynamicFields(
+        dynamicFields.map((field) =>
+          field.id === fieldId ? updatedField : field,
+        ),
+      );
+      toast.success("Field updated successfully");
+    } catch (error: any) {
+      console.error("Failed to update field:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update field",
+      );
+    }
+  };
+
   // ✅ Real handler for deleting dynamic field
   const handleDeleteDynamicField = async (
     fieldId: string,
-    fieldLabel: string
+    fieldLabel: string,
   ) => {
     toast(`Are you sure you want to delete "${fieldLabel}"?`, {
       action: {
@@ -173,13 +204,13 @@ export function LGAdminDashboard() {
           try {
             await adminService.deleteDynamicField(fieldId);
             setDynamicFields(
-              dynamicFields.filter((field) => field.id !== fieldId)
+              dynamicFields.filter((field) => field.id !== fieldId),
             );
             toast.success(`Field "${fieldLabel}" deleted successfully`);
           } catch (error: any) {
             console.error("Failed to delete field:", error);
             toast.error(
-              error.response?.data?.message || "Failed to delete field"
+              error.response?.data?.message || "Failed to delete field",
             );
           }
         },
@@ -198,7 +229,7 @@ export function LGAdminDashboard() {
     regeneration_fee: number;
   }) => {
     const loadingToast = toast.loading(
-      lgaFees ? "Updating fees..." : "Creating fees..."
+      lgaFees ? "Updating fees..." : "Creating fees...",
     );
     try {
       let result;
@@ -229,7 +260,7 @@ export function LGAdminDashboard() {
           loading: "Exporting applications...",
           success: "Applications exported successfully",
           error: "Failed to export applications",
-        }
+        },
       );
     } catch (error: any) {
       console.error("Export failed:", error);
@@ -247,7 +278,7 @@ export function LGAdminDashboard() {
           loading: "Exporting digitization requests...",
           success: "Digitization requests exported successfully",
           error: "Failed to export digitization requests",
-        }
+        },
       );
     } catch (error: any) {
       console.error("Export failed:", error);
@@ -391,6 +422,7 @@ export function LGAdminDashboard() {
       approvalData={approvalData}
       handleLogout={handleLogout}
       handleAddDynamicField={handleAddDynamicField}
+      handleUpdateDynamicField={handleUpdateDynamicField}
       handleDeleteDynamicField={handleDeleteDynamicField}
       handleSaveFees={handleSaveFees}
       handleExportApplications={handleExportApplications}

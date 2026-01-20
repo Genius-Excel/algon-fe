@@ -109,12 +109,17 @@ interface NINVerificationResponse {
 }
 
 interface PaymentInitiationResponse {
-  status: boolean;
+  status?: boolean;
   message: string;
   data: {
-    authorization_url: string;
-    access_code: string;
-    reference: string;
+    status: boolean;
+    message: string;
+    data: {
+      authorization_url: string;
+      access_code: string;
+      reference: string;
+    };
+    public_key?: string; // Optional: Paystack public key for inline checkout
   };
 }
 
@@ -165,7 +170,7 @@ class ApplicationService {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
     return response.data;
   }
@@ -182,7 +187,7 @@ class ApplicationService {
         field_id: string;
       }>;
       [key: string]: any; // For dynamic file fields
-    }
+    },
   ): Promise<ApplicationStep2Response> {
     if (USE_MOCK) {
       return {
@@ -230,7 +235,7 @@ class ApplicationService {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
     return response.data;
   }
@@ -291,7 +296,7 @@ class ApplicationService {
     formData.append("phone_number", data.phone_number);
     formData.append(
       "certificate_reference_number",
-      data.certificate_reference_number
+      data.certificate_reference_number,
     );
 
     if (data.profile_photo) {
@@ -311,7 +316,7 @@ class ApplicationService {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-      }
+      },
     );
     return response.data;
   }
@@ -354,7 +359,7 @@ class ApplicationService {
   // Verify NIN information
   async verifyNIN(
     applicationId: string,
-    type: "certificate" | "digitization" | "certificate,digitization"
+    type: "certificate" | "digitization" | "certificate,digitization",
   ): Promise<NINVerificationResponse> {
     if (USE_MOCK) {
       return {
@@ -363,7 +368,7 @@ class ApplicationService {
     }
 
     const response = await apiClient.get<NINVerificationResponse>(
-      `/verify-nin/${applicationId}?type=${type}`
+      `/verify-nin/${applicationId}?type=${type}`,
     );
     return response.data;
   }
@@ -379,10 +384,14 @@ class ApplicationService {
         status: true,
         message: "Payment initiated successfully",
         data: {
-          authorization_url:
-            "https://mock-payment-gateway.com/pay/" + data.application_id,
-          access_code: "mock_access_" + Date.now(),
-          reference: "mock_ref_" + Date.now(),
+          status: true,
+          message: "Authorization URL created",
+          data: {
+            authorization_url:
+              "https://mock-payment-gateway.com/pay/" + data.application_id,
+            access_code: "mock_access_" + Date.now(),
+            reference: "mock_ref_" + Date.now(),
+          },
         },
       };
     }
@@ -394,7 +403,7 @@ class ApplicationService {
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     return response.data;
   }
@@ -427,7 +436,7 @@ class ApplicationService {
 
     const response = await apiClient.post<Application>(
       "/applications/",
-      formData
+      formData,
     );
     return response.data;
   }
@@ -467,18 +476,18 @@ class ApplicationService {
   async updateApplicationStatus(
     id: string,
     status: "approved" | "rejected",
-    comment?: string
+    comment?: string,
   ): Promise<Application> {
     if (USE_MOCK) {
       return mockApplicationService.updateApplicationStatus(
         id,
         status,
-        comment
+        comment,
       );
     }
     const response = await apiClient.patch<Application>(
       `/applications/${id}/status/`,
-      { status, comment }
+      { status, comment },
     );
     return response.data;
   }

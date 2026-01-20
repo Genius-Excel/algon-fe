@@ -7,6 +7,7 @@ import type { Application } from "../../Types/types";
 import { applicationService } from "../../services"; // ✅ Import service
 import { useAuth } from "../../hooks/useAuth"; // ✅ Import auth hook
 import { tokenManager } from "../../utils/tokenManager"; // ✅ Import tokenManager
+import { formatDate } from "../../utils/validation"; // ✅ Import formatDate
 
 export function ApplicantDashboard() {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ export function ApplicantDashboard() {
 
   // ✅ Get user name from stored data
   const userData = tokenManager.getUserData();
-  const userName = userData?.name || "User";
+  const userName = userData?.name || userData?.first_name || "Applicant";
 
   // ✅ State for API data
   const [applications, setApplications] = useState<Application[]>([]);
@@ -55,8 +56,12 @@ export function ApplicantDashboard() {
           nin: app.nin,
           status: app.application_status || app.status,
           payment: app.payment_status || app.payment,
-          dateProcessed: app.approved_at || app.dateProcessed || app.updated_at,
-          dateApplied: app.created_at || app.dateApplied,
+          dateProcessed: app.approved_at
+            ? formatDate(app.approved_at)
+            : app.updated_at
+              ? formatDate(app.updated_at)
+              : "Pending",
+          dateApplied: app.created_at ? formatDate(app.created_at) : "N/A",
           village: app.village,
           lga:
             typeof app.local_government === "object"
@@ -65,7 +70,7 @@ export function ApplicantDashboard() {
           state: typeof app.state === "object" ? app.state?.name : app.state,
           email: app.email,
           phone: app.phone_number || app.phone,
-        })
+        }),
       );
 
       setApplications(transformedApplications);
@@ -112,7 +117,7 @@ export function ApplicantDashboard() {
   // ✅ Calculate stats from real data
   const currentApplication =
     applications.find(
-      (app) => app.status === "under-review" || app.status === "pending"
+      (app) => app.status === "under-review" || app.status === "pending",
     ) ||
     applications[0] ||
     null;
@@ -121,7 +126,7 @@ export function ApplicantDashboard() {
     total: applications.length,
     approved: applications.filter((app) => app.status === "approved").length,
     pending: applications.filter(
-      (app) => app.status === "under-review" || app.status === "pending"
+      (app) => app.status === "under-review" || app.status === "pending",
     ).length,
   };
 

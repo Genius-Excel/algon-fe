@@ -87,7 +87,7 @@ interface LGAdminDashboardDesignProps {
     | "reports"
     | "settings";
   setActiveTab: (
-    tab: "dashboard" | "applications" | "digitization" | "reports" | "settings"
+    tab: "dashboard" | "applications" | "digitization" | "reports" | "settings",
   ) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
@@ -111,6 +111,15 @@ interface LGAdminDashboardDesignProps {
   approvalData: ApprovalData[];
   handleLogout: () => void;
   handleAddDynamicField: (field: Omit<DynamicField, "id">) => void;
+  handleUpdateDynamicField: (
+    fieldId: string,
+    fieldData: {
+      field_label: string;
+      field_name: string;
+      is_required: boolean;
+      field_type: string;
+    },
+  ) => void;
   handleDeleteDynamicField: (fieldId: string, fieldLabel: string) => void;
   handleSaveFees: (feeData: {
     application_fee: number;
@@ -157,6 +166,7 @@ export function LGAdminDashboardDesign({
   approvalData,
   handleLogout,
   handleAddDynamicField,
+  handleUpdateDynamicField,
   handleDeleteDynamicField,
   handleSaveFees,
   handleExportApplications,
@@ -333,6 +343,7 @@ export function LGAdminDashboardDesign({
               dynamicFields={dynamicFields}
               lgaFees={lgaFees}
               handleAddDynamicField={handleAddDynamicField}
+              handleUpdateDynamicField={handleUpdateDynamicField}
               handleDeleteDynamicField={handleDeleteDynamicField}
               handleSaveFees={handleSaveFees}
             />
@@ -1067,6 +1078,15 @@ interface SettingsTabProps {
   dynamicFields: DynamicField[];
   lgaFees?: any;
   handleAddDynamicField: (field: Omit<DynamicField, "id">) => void;
+  handleUpdateDynamicField: (
+    fieldId: string,
+    fieldData: {
+      field_label: string;
+      field_name: string;
+      is_required: boolean;
+      field_type: string;
+    },
+  ) => void;
   handleDeleteDynamicField: (fieldId: string, fieldLabel: string) => void;
   handleSaveFees: (feeData: {
     application_fee: number;
@@ -1079,6 +1099,7 @@ function SettingsTab({
   dynamicFields,
   lgaFees,
   handleAddDynamicField,
+  handleUpdateDynamicField,
   handleDeleteDynamicField,
   handleSaveFees,
 }: SettingsTabProps) {
@@ -1086,6 +1107,12 @@ function SettingsTab({
   const [isEditFieldModalOpen, setIsEditFieldModalOpen] = useState(false);
   const [isEditFeesModalOpen, setIsEditFeesModalOpen] = useState(false);
   const [editingField, setEditingField] = useState<DynamicField | null>(null);
+  const [editFieldData, setEditFieldData] = useState({
+    field_label: "",
+    field_name: "",
+    field_type: "text" as "text" | "number" | "date" | "file" | "dropdown",
+    is_required: false,
+  });
   const [newField, setNewField] = useState({
     field_label: "",
     field_type: "text" as "text" | "number" | "date" | "file" | "dropdown",
@@ -1100,6 +1127,12 @@ function SettingsTab({
 
   const handleEditClick = (field: DynamicField) => {
     setEditingField(field);
+    setEditFieldData({
+      field_label: field.field_label,
+      field_name: field.field_name,
+      field_type: field.field_type,
+      is_required: field.is_required,
+    });
     setIsEditFieldModalOpen(true);
   };
 
@@ -1207,7 +1240,7 @@ function SettingsTab({
                           onClick={() =>
                             handleDeleteDynamicField(
                               field.id,
-                              field.field_label
+                              field.field_label,
                             )
                           }
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -1497,7 +1530,7 @@ function SettingsTab({
               <Select
                 value={newField.field_type}
                 onValueChange={(
-                  value: "text" | "number" | "date" | "file" | "dropdown"
+                  value: "text" | "number" | "date" | "file" | "dropdown",
                 ) => setNewField({ ...newField, field_type: value })}
               >
                 <SelectTrigger className="rounded-lg">
@@ -1563,14 +1596,41 @@ function SettingsTab({
                 <Input
                   id="editFieldLabel"
                   placeholder="e.g., Letter from Community Head"
-                  defaultValue={editingField.field_label}
+                  value={editFieldData.field_label}
+                  onChange={(e) =>
+                    setEditFieldData({
+                      ...editFieldData,
+                      field_label: e.target.value,
+                    })
+                  }
+                  className="rounded-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editFieldName">Field Name *</Label>
+                <Input
+                  id="editFieldName"
+                  placeholder="e.g., letter_from_community_head"
+                  value={editFieldData.field_name}
+                  onChange={(e) =>
+                    setEditFieldData({
+                      ...editFieldData,
+                      field_name: e.target.value,
+                    })
+                  }
                   className="rounded-lg"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="editFieldType">Input Type *</Label>
-                <Select defaultValue={editingField.field_type}>
+                <Select
+                  value={editFieldData.field_type}
+                  onValueChange={(value: any) =>
+                    setEditFieldData({ ...editFieldData, field_type: value })
+                  }
+                >
                   <SelectTrigger className="rounded-lg">
                     <SelectValue />
                   </SelectTrigger>
@@ -1588,7 +1648,13 @@ function SettingsTab({
                 <input
                   type="checkbox"
                   id="editRequired"
-                  defaultChecked={editingField.is_required}
+                  checked={editFieldData.is_required}
+                  onChange={(e) =>
+                    setEditFieldData({
+                      ...editFieldData,
+                      is_required: e.target.checked,
+                    })
+                  }
                   className="rounded"
                 />
                 <Label
@@ -1607,12 +1673,17 @@ function SettingsTab({
                   Cancel
                 </Button>
                 <Button
-                  onClick={async () => {
-                    const { toast } = await import("sonner");
-                    toast.success("Field updated successfully!");
-                    setIsEditFieldModalOpen(false);
+                  onClick={() => {
+                    if (editingField && editFieldData.field_label.trim()) {
+                      handleUpdateDynamicField(editingField.id, editFieldData);
+                      setIsEditFieldModalOpen(false);
+                    }
                   }}
                   className="!bg-green-600 hover:!bg-green-700 !text-white"
+                  disabled={
+                    !editFieldData.field_label.trim() ||
+                    !editFieldData.field_name.trim()
+                  }
                 >
                   Update Field
                 </Button>
@@ -1913,7 +1984,7 @@ function DigitizationDialog({ request }: { request: DigitizationRequest }) {
                       label: "Approve",
                       onClick: () => {
                         toast.success(
-                          "Request approved and digitized successfully!"
+                          "Request approved and digitized successfully!",
                         );
                       },
                     },

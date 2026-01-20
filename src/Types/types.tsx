@@ -216,6 +216,11 @@ export interface LocalGovernment {
     name: string;
     id: string;
   };
+  asigned_admin?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
   assigned_admin?: {
     id: string;
     name: string;
@@ -238,6 +243,7 @@ export interface AllLocalGovernmentsResponse {
 export interface DynamicField {
   id: string;
   field_label: string;
+  field_name: string;
   field_type: "text" | "number" | "date" | "file" | "dropdown";
   is_required: boolean;
   dropdown_options?: string[];
@@ -245,6 +251,7 @@ export interface DynamicField {
 
 export interface DynamicFieldFormData {
   field_label: string;
+  field_name?: string;
   field_type: "text" | "number" | "date" | "file" | "dropdown";
   is_required: boolean;
   dropdown_options: string[];
@@ -642,12 +649,17 @@ export interface PaystackPaymentData {
 }
 
 export interface PaymentInitiationResponse {
-  status: boolean;
+  status?: boolean;
   message: string;
   data: {
-    authorization_url: string;
-    access_code: string;
-    reference: string;
+    status: boolean;
+    message: string;
+    data: {
+      authorization_url: string;
+      access_code: string;
+      reference: string;
+    };
+    public_key?: string; // Optional: Paystack public key for inline checkout
   };
 }
 
